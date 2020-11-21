@@ -10,14 +10,17 @@ project(imgui-frc-char)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-if (APPLE)
-    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-endif()
-
 include(GenResources)
 include(BuildWPIUtil)
 include(BuildWPIMath)
 
-add_executable(imgui-frc-char src/main/native/Main.cpp)
-target_link_libraries(imgui-frc-char PUBLIC wpiutil wpimath)
+add_subdirectory(imgui)
 
+include(BuildWPIGUI)
+
+add_executable(imgui-frc-char src/main/native/Main.cpp)
+target_link_libraries(imgui-frc-char PUBLIC wpiutil wpimath wpigui)
+
+if (APPLE)
+  set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
+endif()
