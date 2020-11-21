@@ -18,4 +18,4 @@ jobs:
         run: mkdir build && cd build && cmake .. -GXcode "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
       
       - name: Build
-        run: cd build && xcodebuild
+        run: cd build && xcodebuild -UseModernBuildSystem=YES
