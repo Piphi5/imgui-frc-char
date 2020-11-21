@@ -8,8 +8,6 @@ jobs:
     name: Build - macOS
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Select Xcode 12
         run: sudo xcode-select -s /Applications/Xcode_12.3.app
