@@ -85,11 +85,11 @@ macro(add_wpilib_targets version linkage)
   add_individual_library(
     edu/wpi/first/wpilibc/wpilibc-cpp wpilibc-cpp ${version} wpilibc ${linkage})
   add_individual_library(
-    edu/wpi/first/hal/hal-cpp hal-cpp ${version} hal ${linkage})
+    edu/wpi/first/hal/hal-cpp hal-cpp ${version} wpiHal ${linkage})
   add_individual_library(
     edu/wpi/first/ntcore/ntcore-cpp ntcore-cpp ${version} ntcore ${linkage})
   add_individual_library(
-    edu/wpi/first/hal/cscore-cpp cscore-cpp ${version} cscore ${linkage})
+    edu/wpi/first/cscore/cscore-cpp cscore-cpp ${version} cscore ${linkage})
   add_individual_library(
     edu/wpi/first/cameraserver/cameraserver-cpp cameraserver-cpp ${version} cameraserver ${linkage})
 endmacro()
