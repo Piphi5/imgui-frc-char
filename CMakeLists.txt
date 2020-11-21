@@ -9,15 +9,28 @@ endif()
 
 project(imgui-frc-char)
 
-set(CMAKE_CXX_STANDARD 17)
+# Place libraries in lib and binaries in bin.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Set C++ standard.
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+# Create WPILib targets and imgui.
 add_wpilib_targets(2021.1.1-beta-2 STATIC)
 add_subdirectory(imgui)
 
-add_executable(imgui-frc-char src/main/native/Main.cpp)
+# Create our main executable.
+file(GLOB_RECURSE imgui-frc-char-sources src/main/native/*.cpp)
+add_executable(imgui-frc-char ${imgui-frc-char-sources})
+target_include_directories(imgui-frc-char PUBLIC src/main/native)
+
+# Link to macOS Frameworks.
 if (APPLE)
   set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
 endif()
-target_link_libraries(imgui-frc-char PUBLIC wpigui imgui wpimath wpiutil)
 
+# Link to imgui and WPILib.
+target_link_libraries(imgui-frc-char PUBLIC wpigui imgui wpimath wpiutil)
