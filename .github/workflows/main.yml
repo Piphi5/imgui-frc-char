@@ -8,11 +8,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-11.0
-            args: "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -GNinja"
+          - os: macos-latest
+            args: "\"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -GNinja\""
             name: macOS
           - os: ubuntu-20.04
-            args: "-GNinja"
+            args: ""
             name: Linux
 
     runs-on: ${{ matrix.os }}
