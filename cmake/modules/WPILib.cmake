@@ -76,7 +76,6 @@ endmacro()
 # Setup All Targets
 # ==============================================================================
 macro(add_wpilib_targets version linkage)
-  find_package(OpenCV REQUIRED)
   add_individual_library(
     edu/wpi/first/wpigui/wpigui-cpp wpigui-cpp ${version} wpigui STATIC)
   add_individual_library(
