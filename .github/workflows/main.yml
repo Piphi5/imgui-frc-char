@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-11.0
     name: Build - macOS
     steps:
       - uses: actions/checkout@v2
@@ -14,11 +14,8 @@ jobs:
       - name: Select Xcode 12
         run: sudo xcode-select -s /Applications/Xcode_12.app
 
-      - name: Install Ninja
-        run: brew install ninja
-
       - name: Configure CMake
-        run: mkdir build && cd build && cmake .. -GNinja "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+        run: mkdir build && cd build && cmake .. --GXcode "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
       
       - name: Build
-        run: cd build && ninja
+        run: cd build && xcodebuild
