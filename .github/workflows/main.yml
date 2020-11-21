@@ -15,7 +15,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_12.3.app
 
       - name: Configure CMake
-        run: mkdir build && cd build && cmake .. --GXcode "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+        run: mkdir build && cd build && cmake .. -GXcode "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
       
       - name: Build
         run: cd build && xcodebuild
