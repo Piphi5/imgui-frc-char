@@ -1,0 +1,26 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-11.0
+            args: "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -GNinja"
+            name: macOS
+          - os: ubuntu-20.04
+            args: "-GNinja"
+            name: Linux
+
+    runs-on: ${{ matrix.os }}
+    name: "Build - ${{ matrix.name }}"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - run: mkdir build && cd build && cmake .. ${{ matrix.args }}
+      - run: cd build && ninja
