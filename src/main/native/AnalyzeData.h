@@ -1,4 +1,4 @@
-
+// MIT License
 
 #pragma once
 

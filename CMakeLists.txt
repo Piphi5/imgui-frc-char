@@ -25,13 +25,16 @@ add_subdirectory(imgui)
 # Create our main executable.
 file(GLOB_RECURSE imgui-frc-char-sources src/main/native/*.cpp)
 file(GLOB_RECURSE imgui-frc-char-headers src/main/native/*.h)
-add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
-target_include_directories(imgui-frc-char PUBLIC src/main/native)
 
-# Link to macOS Frameworks.
 if (APPLE)
+  add_executable(imgui-frc-char MACOSX_BUNDLE ${imgui-frc-char-sources} ${imgui-frc-char-headers})
+  target_compile_definitions(imgui-frc-char PUBLIC MACOSX_BUNDLE)
   set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
+else()
+  add_executable(imgui-frc-char MACOSX_BUNDLE ${imgui-frc-char-sources} ${imgui-frc-char-headers})
 endif()
+
+target_include_directories(imgui-frc-char PUBLIC src/main/native)
 
 # Link to imgui and WPILib.
 target_link_libraries(imgui-frc-char PUBLIC wpigui imgui wpimath ntcore wpiutil)

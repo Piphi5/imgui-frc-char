@@ -1,47 +1,65 @@
-
+// MIT License
 
 #include "AnalyzeData.h"
 
 #include <imgui.h>
+#include <portable-file-dialogs.h>
 #include <wpigui.h>
 
 #include <future>
 #include <iostream>
 #include <thread>
 
+#include <wpi/StringRef.h>
+#include <wpi/json.h>
+#include <wpi/raw_istream.h>
+
 #include "FRCCharacterizationGUI.h"
 
 using namespace frcchar;
 
-struct Result {
-  const char* name = "A";
-};
+static std::unique_ptr<pfd::open_file> gFileOpener;
 
-static std::future<Result> gCalculatedFuture;
+static void LoadJSON() {
+  if (gFileOpener && gFileOpener->ready()) {
+    auto result = gFileOpener->result();
+    if (!result.empty()) {
+      if (wpi::StringRef(result[0]).endswith(".json")) {
+        std::error_code ec;
+        wpi::raw_fd_istream f(result[0], ec);
+        if (ec) {
+          std::cout << "Unable to open JSON" << std::endl;
+          return;
+        } else {
+          wpi::json j;
+          try {
+            j = wpi::json::parse(f);
+            auto a =
+                j.at("slow-forward").get<std::vector<std::array<double, 9>>>();
 
-template <typename R>
-bool is_ready(std::future<R> const& f) {
-  return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+            for (auto&& aa : a) {
+              for (auto&& b : aa) {
+                std::cout << b << ", " << std::endl;
+              }
+              std::cout << std::endl;
+            }
+
+            std::cout << "Parsed" << std::endl;
+          } catch (const wpi::json::parse_error& e) {
+            std::cout << e.what() << std::endl;
+          }
+        }
+      }
+    }
+    gFileOpener.reset();
+  }
 }
 
 void AnalyzeData::Initialize() {
   FRCCharacterizationGUI::AddWindow("Analyze Data", [] {
-    if (!gCalculatedFuture.valid()) {
-      if (ImGui::Button("Calculate")) {
-        gCalculatedFuture = std::async(std::launch::async, [] {
-          std::this_thread::sleep_for(std::chrono::seconds(2));
-          return Result();
-        });
-      }
-      return;
+    if (ImGui::Button("Choose JSON File")) {
+      gFileOpener = std::make_unique<pfd::open_file>("Choose JSON");
     }
-
-    if (is_ready(gCalculatedFuture)) {
-      // gCalculatedFuture.get();
-      // gCalculatedFuture = std::future<Result>();
-      ImGui::Button("Calculated!");
-    } else {
-      ImGui::Button("Calculating...");
-    }
+    LoadJSON();
   });
 }

@@ -1,4 +1,4 @@
-
+// MIT License
 
 #include "Logger.h"
 
