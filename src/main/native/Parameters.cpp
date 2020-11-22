@@ -147,6 +147,6 @@ void Parameters::Initialize() {
         static_cast<void>(gProjectGenFuture.get());
       }
     }
-    Logger::UpdateProjectType(gProjectTypes[gProjectType]);
+    // Logger::UpdateProjectType(gProjectTypes[gProjectType]);
   });
 }

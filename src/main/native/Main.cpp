@@ -10,8 +10,10 @@
 #include "Logger.h"
 #include "Parameters.h"
 
+using namespace frcchar;
+
 int main() {
-  frcchar::FRCCharacterizationGUI::GlobalInit();
+  FRCCharacterizationGUI::GlobalInit();
 
 #ifdef MACOSX_BUNDLE
   wpi::gui::AddInit([] {
@@ -21,12 +23,14 @@ int main() {
   });
 #endif
 
-  frcchar::FRCCharacterizationGUI::Add(frcchar::AnalyzeData::Initialize);
-  frcchar::FRCCharacterizationGUI::Add(frcchar::Parameters::Initialize);
-  frcchar::FRCCharacterizationGUI::Add(frcchar::Logger::Initialize);
+  Logger logger;
 
-  if (!frcchar::FRCCharacterizationGUI::Initialize()) return 0;
+  FRCCharacterizationGUI::Add(AnalyzeData::Initialize);
+  FRCCharacterizationGUI::Add(Parameters::Initialize);
+  FRCCharacterizationGUI::Add([&logger] { logger.Initialize(); });
 
-  frcchar::FRCCharacterizationGUI::Main();
-  frcchar::FRCCharacterizationGUI::Exit();
+  if (!FRCCharacterizationGUI::Initialize()) return 0;
+
+  FRCCharacterizationGUI::Main();
+  FRCCharacterizationGUI::Exit();
 }

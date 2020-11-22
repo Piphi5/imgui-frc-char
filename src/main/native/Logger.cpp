@@ -15,131 +15,151 @@
 
 using namespace frcchar;
 
-std::string Logger::gProjectType = "Drivetrain";
-static bool gAddTimestamp = true;
-static int gTeamNumber = 0;
-
-static float gQuasistaticRampVoltage = 0.25f;
-static float gDynamicStepVoltage = 6.0f;
-static float gRotationVoltage = 2.0f;
-
-static std::future<bool> gNotificationFuture;
-static bool gConnectionEstablished = false;
-static bool gConnectionStatus = false;
-
-struct TestState {
-  enum RunState { kNever, kInProgress, kFinished };
-  std::string name;
-  RunState runState;
-};
-
-static const char* gOpenedPopup = "";
-
-static void CreateTestButton(const char* text, bool connection, bool run) {
-  ImGui::SetNextItemWidth(70);
-  if (connection) {
-    if (ImGui::Button(text)) {
-      ImGui::OpenPopup("Warning");
-      gOpenedPopup = text;
-    }
-    if (gOpenedPopup == text && ImGui::BeginPopupModal("Warning")) {
-      ImGui::Text(
-          "Please enable the robot in autonomous mode, and then disable it "
-          "before it runs out of space. \n Note: The robot will continue to "
-          "move until you disable it - It is your responsibility to ensure it "
-          "does not hit anything!");
-      if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
-        gOpenedPopup = "";
-      }
-
-      ImGui::EndPopup();
-    }
-  } else {
-    ImGui::TextDisabled("%s", text);
-  }
-  ImGui::SameLine(200);
-  ImGui::Text(run ? "Run" : "Not Run");
-}
-
 void Logger::Initialize() {
-  FRCCharacterizationGUI::AddWindow("Logger", [] {
-    // Add test type.
-    ImGui::Text("%s", ("Project Type: " + gProjectType).c_str());
+  // Add a new window to the GUI.
+  FRCCharacterizationGUI::AddWindow("Logger", [&] {
+    // Get the current width of the window. This will be used to scale our UI
+    // elements.
+    int width = ImGui::GetContentRegionAvail().x;
 
-    // Add timestamp.
-    ImGui::Checkbox("Timestamp // Team: ", &gAddTimestamp);
+    // Display information about the test type.
+    ImGui::Text("%s", ("Project Type: " + m_projectType).c_str());
 
-    ImGui::SameLine(210);
-
-    ImGui::SetNextItemWidth(70);
-    ImGui::InputInt("##label", &gTeamNumber, 0);
-    ImGui::SameLine(300);
-    if (!gNotificationFuture.valid() && !gConnectionEstablished) {
-      if (ImGui::Button("Connect")) {
-        gNotificationFuture = std::async(std::launch::async, [] {
-          if (gTeamNumber != 0) {
-            nt::NetworkTableInstance::GetDefault().StartClientTeam(gTeamNumber);
-          } else {
-            nt::NetworkTableInstance::GetDefault().StartClient("localhost");
-          }
-          bool connected = false;
-          auto start = std::chrono::system_clock::now();
-
-          while (!connected && (std::chrono::system_clock::now() - start) <
-                                   std::chrono::seconds(3)) {
-            connected = nt::NetworkTableInstance::GetDefault().IsConnected();
-          }
-
-          return connected;
-        });
-      }
-    } else if (!gConnectionEstablished &&
-               gNotificationFuture.wait_for(std::chrono::seconds(0)) ==
-                   std::future_status::timeout) {
-      ImGui::Button("Connecting...");
-    } else if (gNotificationFuture.valid()) {
-      gConnectionStatus = gNotificationFuture.get();
-      gConnectionEstablished = true;
-      if (!gConnectionStatus)
-        nt::NetworkTableInstance::GetDefault().StopClient();
+    // Add NT connection buttons and team number input.
+    // If the future is not valid or there is no need to reset, then it means we
+    // need to show a button to establish a connection.
+    if (!m_ntConnectionStatus.valid() && !m_ntNeedsReset) {
+      if (ImGui::Button("Connect")) AttemptNTConnection();
     }
 
-    if (gConnectionEstablished) {
-      ImGui::Button(gConnectionStatus ? "Connected" : "Connection Failed");
+    // If the future is still calculating, then we need to display the
+    // "Connecting..." text.
+    else if (!m_ntNeedsReset && !IsNTConnectionStatusReady())
+      ImGui::Button("Connecting...");
+
+    // If we have a shared state for the future, we can display the output.
+    else if (m_ntConnectionStatus.valid()) {
+      // Now that we have a state, we can show the reset button.
+      m_ntNeedsReset = true;
+
+      // Set the last NT connection to whatever the state was.
+      m_lastNTConnection = m_ntConnectionStatus.get();
+    }
+
+    // If we need to show the reset button, it means that we either have a
+    // failure or success state. We need to display this.
+    if (m_ntNeedsReset) {
+      ImGui::Button(m_lastNTConnection ? "Connected" : "Connection Failed");
       ImGui::SameLine();
       if (ImGui::Button("Reset")) {
-        gConnectionStatus = false;
-        gConnectionEstablished = false;
+        // Reset the statuses.
+        m_ntNeedsReset = false;
+        m_lastNTConnection = false;
       }
     }
 
-    // Separation.
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(width / 5);
+    ImGui::InputInt("Team Number", &m_teamNumber, 0);
+
+    // Create new section for voltage parameters.
     ImGui::Separator();
     ImGui::Spacing();
-
-    // Add voltage parameters
     ImGui::Text("Voltage Parameters");
-    ImGui::SetNextItemWidth(70);
-    ImGui::InputFloat("Quasistatic Ramp Rate (V/s)", &gQuasistaticRampVoltage);
-    ImGui::SetNextItemWidth(70);
-    ImGui::InputFloat("Dynamic Step Voltage (V)", &gDynamicStepVoltage);
-    ImGui::SetNextItemWidth(70);
-    ImGui::InputFloat("Rotation Voltage (V)", &gRotationVoltage);
 
-    // Separation.
+    // Add input boxes for the various voltage parameters.
+    auto createVoltageParameterInputs = [&](const char* name, float* data) {
+      ImGui::SetNextItemWidth(width / 5);
+      ImGui::InputFloat(name, data);
+    };
+
+    createVoltageParameterInputs("Quasistatic Ramp Rate (V/s)",
+                                 &m_quasistaticRampVoltage);
+    createVoltageParameterInputs("Dynamic Step Voltage (V)",
+                                 &m_dynamicStepVoltage);
+    if (m_projectType == "Drivetrain")
+      createVoltageParameterInputs("Rotation Voltage (V)", &m_rotationVoltage);
+
+    // Create new section for tests.
     ImGui::Separator();
     ImGui::Spacing();
-
-    // Tests
     ImGui::Text("Tests");
-    CreateTestButton("Quasistatic Forward", gConnectionStatus, false);
-    CreateTestButton("Quasistatic Reverse", gConnectionStatus, false);
-    CreateTestButton("Dynamic Forward", gConnectionStatus, false);
-    CreateTestButton("Dynamic Reverse", gConnectionStatus, false);
-    if (gProjectType == "Drivetrain")
-      CreateTestButton("Track Width", gConnectionStatus, false);
+
+    // Add buttons and text for the tests.
+    auto createTestButtons = [&](const char* name, bool run) {
+      // Display buttons if we have an NT connection.
+      if (m_lastNTConnection) {
+        // Create button to run test.
+        if (ImGui::Button(name)) {
+          // Open the warning message.
+          ImGui::OpenPopup("Warning");
+
+          // Store the name of the button that caused the warning.
+          m_openedPopup = name;
+        }
+        // Create modal window.
+        if (m_openedPopup == name && ImGui::BeginPopupModal("Warning")) {
+          // Show warning text.
+          ImGui::Text(
+              "Please enable the robot in autonomous mode, and then disable it "
+              "before it runs out of space. \n Note: The robot will continue "
+              "to move until you disable it - It is your responsibility to "
+              "ensure it does not hit anything!");
+          // Add "Close" button
+          if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+          ImGui::EndPopup();
+        }
+      } else {
+        // Show disabled text because there is no NT connection.
+        ImGui::TextDisabled("%s", name);
+      }
+
+      // Show whether the tests were run or not.
+      ImGui::SameLine(width * 0.7);
+      ImGui::Text(run ? "Run" : "Not Run");
+    };
+
+    createTestButtons("Quasistatic Forward", false);
+    createTestButtons("Quasistatic Reverse", false);
+    createTestButtons("Dynamic Forward", false);
+    createTestButtons("Dynamic Backward", false);
+    if (m_projectType == "Drivetrain") createTestButtons("Track Width", false);
   });
 }
 
-void Logger::UpdateProjectType(const std::string& type) { gProjectType = type; }
+void Logger::UpdateProjectType(const std::string& type) {
+  m_projectType = type;
+}
+
+void Logger::AttemptNTConnection() {
+  m_ntConnectionStatus = std::async(std::launch::async, [&] {
+    using namespace std::chrono;
+
+    // Get the current time.
+    auto startTime = system_clock::now();
+
+    // Attempt connection.
+    if (m_teamNumber == 0)
+      nt::NetworkTableInstance::GetDefault().StartClient("localhost");
+    else
+      nt::NetworkTableInstance::GetDefault().StartClientTeam(m_teamNumber);
+
+    // Wait for connection success or 3 seconds of connection failure.
+    bool connected = false;
+    while (!(connected || system_clock::now() - startTime > seconds(3)))
+      // Check whether a connection has been established.
+      connected = nt::NetworkTableInstance::GetDefault().IsConnected();
+
+    // If there was no connection established, we can stop attempting to
+    // connect.
+    if (!connected) nt::NetworkTableInstance::GetDefault().StopClient();
+
+    // Return the connection status.
+    return connected;
+  });
+}
+
+bool Logger::IsNTConnectionStatusReady() const {
+  return m_ntConnectionStatus.wait_for(std::chrono::seconds(0)) !=
+         std::future_status::timeout;
+}
