@@ -1,16 +1,21 @@
-#include <iostream>
 
-#include <frc/geometry/Translation2d.h>
-#include <frc/trajectory/TrajectoryGenerator.h>
 
-#include <imgui.h>
 #include <wpigui.h>
 
-namespace gui = wpi::gui;
+#include "AnalyzeData.h"
+#include "FRCCharacterizationGUI.h"
+#include "Logger.h"
+#include "Parameters.h"
 
 int main() {
-  gui::CreateContext();
-  gui::Initialize("FRC Characterization", 1280, 720);
-  gui::Main();
-  gui::DestroyContext();
+  frcchar::FRCCharacterizationGUI::GlobalInit();
+
+  frcchar::FRCCharacterizationGUI::Add(frcchar::AnalyzeData::Initialize);
+  frcchar::FRCCharacterizationGUI::Add(frcchar::Parameters::Initialize);
+  frcchar::FRCCharacterizationGUI::Add(frcchar::Logger::Initialize);
+
+  if (!frcchar::FRCCharacterizationGUI::Initialize()) return 0;
+
+  frcchar::FRCCharacterizationGUI::Main();
+  frcchar::FRCCharacterizationGUI::Exit();
 }

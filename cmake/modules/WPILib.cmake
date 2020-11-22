@@ -28,9 +28,9 @@ set(WPILIB_ARTIFACTORY_URL "https://frcmaven.wpi.edu/artifactory/release")
 # ==============================================================================
 macro(add_individual_library dirs artifact version lib_name linkage)
   if (${linkage} STREQUAL "STATIC")
-    set(LIB_LOC "${lib_name}/bin/${WPILIB_PLATFORM}/${WPILIB_ARCH}/static/lib${lib_name}${WPILIB_STATIC_EXT}")
+    set(LIB_LOC "${CMAKE_BINARY_DIR}/${lib_name}/bin/${WPILIB_PLATFORM}/${WPILIB_ARCH}/static/lib${lib_name}${WPILIB_STATIC_EXT}")
   else()
-    set(LIB_LOC "${lib_name}/bin/${WPILIB_PLATFORM}/${WPILIB_ARCH}/shared/lib${lib_name}${WPILIB_SHARED_EXT}")
+    set(LIB_LOC "${CMAKE_BINARY_DIR}/${lib_name}/bin/${WPILIB_PLATFORM}/${WPILIB_ARCH}/shared/lib${lib_name}${WPILIB_SHARED_EXT}")
   endif()
 
   if (NOT EXISTS ${LIB_LOC})
