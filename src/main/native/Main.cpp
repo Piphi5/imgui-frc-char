@@ -8,7 +8,7 @@
 #include "DataAnalyzer.h"
 #include "FRCCharacterizationGUI.h"
 #include "Logger.h"
-#include "Parameters.h"
+#include "Generator.h"
 
 using namespace frcchar;
 
@@ -24,9 +24,10 @@ int main() {
 #endif
 
   Logger logger;
+  Generator generator;
 
   FRCCharacterizationGUI::Add(AnalyzeData::Initialize);
-  FRCCharacterizationGUI::Add(Parameters::Initialize);
+  FRCCharacterizationGUI::Add([&generator] { generator.Initialize(); });
   FRCCharacterizationGUI::Add([&logger] { logger.Initialize(); });
 
   if (!FRCCharacterizationGUI::Initialize()) return 0;
