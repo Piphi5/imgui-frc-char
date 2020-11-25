@@ -13,26 +13,24 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Make sure we build for both macOS arm64 and x86_64
-set(CMAKE_OSX_ARCHITECTURES arm64;x86_64)
-
 # Set C++ standard.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Create our main executable.
-file(GLOB_RECURSE imgui-frc-char-sources src/main/native/*.cpp)
-file(GLOB_RECURSE imgui-frc-char-headers src/main/native/*.h)
+file(GLOB_RECURSE imgui-frc-char-sources src/main/native/cpp/*.cpp)
+file(GLOB_RECURSE imgui-frc-char-headers src/main/native/include/*.h)
 
 if (APPLE)
-  add_executable(imgui-frc-char MACOSX_BUNDLE ${imgui-frc-char-sources} ${imgui-frc-char-headers})
-  target_compile_definitions(imgui-frc-char PUBLIC MACOSX_BUNDLE)
+  add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
   set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
 else()
-  add_executable(imgui-frc-char MACOSX_BUNDLE ${imgui-frc-char-sources} ${imgui-frc-char-headers})
+  add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
 endif()
 
-target_include_directories(imgui-frc-char PUBLIC src/main/native)
+target_compile_options(imgui-frc-char PRIVATE -Wall -pedantic -Wextra -Werror -Wno-unused-parameter -Wno-error=deprecated-declarations)
+
+target_include_directories(imgui-frc-char PUBLIC src/main/native/include)
 
 # Link to imgui and WPILib.
 target_link_libraries(imgui-frc-char PUBLIC wpigui imgui wpimath ntcore wpiutil)

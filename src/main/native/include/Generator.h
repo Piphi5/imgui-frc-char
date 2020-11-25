@@ -1,4 +1,11 @@
+// MIT License
+
 #pragma once
+
+#include <portable-file-dialogs.h>
+
+#include <memory>
+#include <string>
 
 #include <wpi/SmallVector.h>
 
@@ -8,6 +15,8 @@ class Generator {
   void Initialize();
 
  private:
+  void SelectProjectLocation();
+
   static const char* kProjectTypes[];
   static const char* kGyros[];
   static const char* kMotorControllers[];
@@ -27,8 +36,11 @@ class Generator {
   size_t m_motorPortsUsed = 1;
 
   char m_gyroPort[40] = "SPI.Port.kMXP";
+  std::string m_projectLocation = "Choose Location...";
 
   bool m_useIntegratedSensor = true;
   bool m_useNEOSensor = true;
+
+  std::unique_ptr<pfd::select_folder> m_folderSelector;
 };
 }  // namespace frcchar

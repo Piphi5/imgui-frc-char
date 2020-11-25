@@ -1,6 +1,6 @@
 # Download and unpack allwpilib at configure time
 configure_file(CMakeLists.txt.in allwpilib-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} 
+execute_process(COMMAND ${CMAKE_COMMAND}
     -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/allwpilib-download )

@@ -10,10 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout
-      
+
       - name: Configure CMake
         run: mkdir build && cd build && cmake ..
-      
+
       - name: Build
         run: cd build && make -j3
 

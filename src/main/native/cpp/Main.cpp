@@ -5,21 +5,13 @@
 #include <cstdlib>
 
 #include "FRCCharacterizationGUI.h"
-#include "Logger.h"
 #include "Generator.h"
+#include "Logger.h"
 
 using namespace frcchar;
 
 int main() {
   FRCCharacterizationGUI::GlobalInit();
-
-#ifdef MACOSX_BUNDLE
-  wpi::gui::AddInit([] {
-    char* path = std::getenv("HOME");
-    std::strcat(path, "/Library/Preferences/imgui-frc-char.ini");
-    ImGui::GetIO().IniFilename = path;
-  });
-#endif
 
   Logger logger;
   Generator generator;

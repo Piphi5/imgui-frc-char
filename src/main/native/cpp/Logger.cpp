@@ -30,15 +30,11 @@ void Logger::Initialize() {
     // need to show a button to establish a connection.
     if (!m_ntConnectionStatus.valid() && !m_ntNeedsReset) {
       if (ImGui::Button("Connect")) AttemptNTConnection();
-    }
-
-    // If the future is still calculating, then we need to display the
-    // "Connecting..." text.
-    else if (!m_ntNeedsReset && !IsNTConnectionStatusReady())
+    } else if (!m_ntNeedsReset && !IsNTConnectionStatusReady()) {
+      // If the future is still calculating, then we need to display the
+      // "Connecting..." text.
       ImGui::Button("Connecting...");
-
-    // If we have a shared state for the future, we can display the output.
-    else if (m_ntConnectionStatus.valid()) {
+    } else if (m_ntConnectionStatus.valid()) {
       // Now that we have a state, we can show the reset button.
       m_ntNeedsReset = true;
 
@@ -133,7 +129,8 @@ void Logger::UpdateProjectType(const std::string& type) {
 
 void Logger::AttemptNTConnection() {
   m_ntConnectionStatus = std::async(std::launch::async, [&] {
-    using namespace std::chrono;
+    using std::chrono::system_clock;
+    using std::chrono::seconds;
 
     // Get the current time.
     auto startTime = system_clock::now();

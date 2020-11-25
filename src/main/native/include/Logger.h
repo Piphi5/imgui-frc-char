@@ -40,7 +40,6 @@ class Logger {
   // Project Settings
   std::string m_projectType = "Drivetrain";
   int m_teamNumber = 0;
-  bool m_addTimestamp = true;
 
   // Voltage Settings
   float m_quasistaticRampVoltage = 0.25f;

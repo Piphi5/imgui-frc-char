@@ -1,6 +1,11 @@
+// MIT License
+
 #include "Generator.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
+
+#include <cstdlib>
 
 #include "FRCCharacterizationGUI.h"
 
@@ -13,6 +18,13 @@ const char* Generator::kGyros[] = {"NavX", "Pigeon", "ADXRS450", "AnalogGyro",
 const char* Generator::kMotorControllers[] = {
     "Spark",        "Victor",        "VictorSP",    "PWMTalonSRX",
     "WPI_TalonSRX", "WPI_VictorSPX", "WPI_TalonFX", "CANSparkMax"};
+
+void Generator::SelectProjectLocation() {
+  if (m_folderSelector && m_folderSelector->ready()) {
+    m_projectLocation = m_folderSelector->result();
+    m_folderSelector.reset();
+  }
+}
 
 void Generator::Initialize() {
   // Add a new window to the GUI.
@@ -64,7 +76,7 @@ void Generator::Initialize() {
     ImGui::Text("Motor Ports");
 
     // Create inputs for motor ports.
-    for (int i = 0; i < m_motorPortsUsed; ++i) {
+    for (size_t i = 0; i < m_motorPortsUsed; ++i) {
       // Ensure vector sizes are correct. It's enough to check only one vector
       // since we always keep their sizes the same.
       if (i == m_leftMotorPorts.size()) {
@@ -134,11 +146,11 @@ void Generator::Initialize() {
       ImGui::Text("roboRIO Encoder Ports");
 
       ImGui::SetNextItemWidth(width / 3.4);
-      ImGui::InputInt2(m_projectType == 0 ? "L Enc Ports" : "Encoder Ports",
+      ImGui::InputInt2(m_projectType == 0 ? "L DIO Ports" : "DIO Ports",
                        m_leftEncoderPorts);
       if (m_projectType == 0) {
         ImGui::SetNextItemWidth(width / 3.4);
-        ImGui::InputInt2("R Enc Ports", m_rightEncoderPorts);
+        ImGui::InputInt2("R DIO Ports", m_rightEncoderPorts);
       }
     }
 
@@ -174,6 +186,49 @@ void Generator::Initialize() {
       createHelperMarker(
           "This represents what you would normally put inside the constructor "
           "of your gyro in your robot code.");
+    }
+
+    // Add section for project generation.
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::Text("Project Generation");
+
+    ImGui::SetNextItemWidth(width * 0.6);
+
+    // Scale the font size down to fit more of the path.
+    ImFont f = *ImGui::GetFont();
+    f.Scale *= 0.85;
+    ImGui::PushFont(&f);
+
+    std::string modifiedLocation = m_projectLocation;
+    const char* home = std::getenv("HOME");
+    size_t index = modifiedLocation.find(home);
+    if (index != std::string::npos) {
+      modifiedLocation.replace(index, std::strlen(home), "~");
+    }
+
+    ImGui::InputText("##label", const_cast<char*>(modifiedLocation.c_str()),
+                     modifiedLocation.capacity() + 1,
+                     ImGuiInputTextFlags_ReadOnly);
+    ImGui::PopFont();
+    ImGui::SameLine();
+
+    if (ImGui::Button("Choose..")) {
+      m_folderSelector =
+          std::make_unique<pfd::select_folder>("Select Project Location");
+    }
+    SelectProjectLocation();
+
+    ImGui::SameLine();
+    bool disabled = m_projectLocation == "Choose Location...";
+    if (disabled) {
+      ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.25f);
+    }
+    ImGui::Button("Generate");
+    if (disabled) {
+      ImGui::PopItemFlag();
+      ImGui::PopStyleVar();
     }
   });
 }
