@@ -6,6 +6,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-20.04
     container: wpilib/ubuntu-base:18.04
+    name: Build - Linux
     steps:
       - uses: actions/checkout@v2
         name: Checkout
