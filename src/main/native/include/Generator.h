@@ -4,6 +4,7 @@
 
 #include <portable-file-dialogs.h>
 
+#include <future>
 #include <memory>
 #include <string>
 
@@ -16,6 +17,8 @@ class Generator {
 
  private:
   void SelectProjectLocation();
+  void GenerateProject();
+  bool IsGenerationReady() const;
 
   static const char* kProjectTypes[];
   static const char* kGyros[];
@@ -42,6 +45,7 @@ class Generator {
   bool m_useIntegratedSensor = true;
   bool m_useNEOSensor = true;
 
+  std::future<void> m_generationStatus;
   std::unique_ptr<pfd::select_folder> m_folderSelector;
 };
 }  // namespace frcchar

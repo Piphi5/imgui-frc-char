@@ -25,11 +25,26 @@ void Generator::SelectProjectLocation() {
     m_modifiedLocation = m_projectLocation;
 
     const char* home = std::getenv("HOME");
-    size_t index = m_modifiedLocation.find(home);
-    if (index != std::string::npos)
-      m_modifiedLocation.replace(index, std::strlen(home), "~");
+    if (home) {
+      size_t len = std::strlen(home);
+      bool trailingSlash = home[len - 1] == '/';
+      size_t index = m_modifiedLocation.find(home);
+      if (index != std::string::npos)
+        m_modifiedLocation.replace(index, len, trailingSlash ? "~/" : "~");
+    }
     m_folderSelector.reset();
   }
+}
+
+void Generator::GenerateProject() {
+  m_generationStatus = std::async(std::launch::async, [] {
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+}
+
+bool Generator::IsGenerationReady() const {
+  return m_generationStatus.wait_for(std::chrono::seconds(0)) !=
+         std::future_status::timeout;
 }
 
 void Generator::Initialize() {
@@ -224,7 +239,14 @@ void Generator::Initialize() {
       ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.25f);
     }
-    ImGui::Button("Generate");
+    if (!m_generationStatus.valid()) {
+      if (ImGui::Button("Generate")) GenerateProject();
+    } else if (!IsGenerationReady()) {
+      ImGui::Button("Generating...");
+    } else if (m_generationStatus.valid()) {
+      if (ImGui::Button("Generated!")) m_generationStatus.get();
+    }
+
     if (disabled) {
       ImGui::PopItemFlag();
       ImGui::PopStyleVar();
