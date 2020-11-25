@@ -18,7 +18,7 @@ class TestConductor {
     std::string msg;
   };
 
-  Error Conduct(const frcchar::Type& type);
+  void Conduct(const frcchar::Type& type);
 
  private:
   bool IsRobotConnected() const;

@@ -1,7 +1,4 @@
 cmake_minimum_required(VERSION 3.18)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
-
-include(WPILib)
 
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds are not allowed.")
@@ -9,18 +6,18 @@ endif()
 
 project(imgui-frc-char)
 
+add_subdirectory(allwpilib)
+
 # Place libraries in lib and binaries in bin.
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set(CMAKE_OSX_ARCHITECTURES arm64;x86_64)
+
 # Set C++ standard.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-# Create WPILib targets and imgui.
-add_wpilib_targets(2021.1.1-beta-2 STATIC)
-add_subdirectory(imgui)
 
 # Create our main executable.
 file(GLOB_RECURSE imgui-frc-char-sources src/main/native/*.cpp)
