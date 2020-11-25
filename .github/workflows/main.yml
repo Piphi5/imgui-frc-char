@@ -28,7 +28,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_12.3.app
 
       - name: Configure CMake
-        run: mkdir build && cd build && cmake -GNinja ..
+        run: mkdir build && cd build && cmake ..
 
       - name: Build
-        run: cd build && ninja
+        run: cd build && make -j3
