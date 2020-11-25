@@ -6,8 +6,8 @@ include(ExternalProject)
 ExternalProject_Add(allwpilib
   GIT_REPOSITORY    https://github.com/wpilibsuite/allwpilib
   GIT_TAG           f0528f00e70ec483352cfed7dd7684c43c713740
-  SOURCE_DIR        "/Users/prateekma/Documents/Dev/imgui-frc-char/build/allwpilib/allwpilib-src"
-  BINARY_DIR        "/Users/prateekma/Documents/Dev/imgui-frc-char/build/allwpilib/allwpilib-build"
+  SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/allwpilib-src"
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/allwpilib-build"
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
   INSTALL_COMMAND   ""

@@ -3,6 +3,19 @@ name: CI
 on: [push, pull_request]
 
 jobs:
+  build-linux:
+    runs-on: ubuntu-20.04
+    container: wpilib/ubuntu-base:18.04
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+      
+      - name: Configure CMake
+        run: mkdir build && cd build && cmake ..
+      
+      - name: Build
+        run: cd build && make -j3
+
   build-macos:
     runs-on: macos-11.0
     name: Build - macOS
@@ -10,14 +23,11 @@ jobs:
       - uses: actions/checkout@v2
         name: Checkout
 
-      - name: Install OpenCV
-        run: brew install opencv
-
       - name: Select Xcode 12
         run: sudo xcode-select -s /Applications/Xcode_12.3.app
 
       - name: Configure CMake
-        run: mkdir build && cd build && cmake ..
+        run: mkdir build && cd build && cmake -GNinja ..
 
       - name: Build
-        run: cd build && make -j3
+        run: cd build && ninja
