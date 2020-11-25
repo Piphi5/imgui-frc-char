@@ -37,6 +37,7 @@ class Generator {
 
   char m_gyroPort[40] = "SPI.Port.kMXP";
   std::string m_projectLocation = "Choose Location...";
+  std::string m_modifiedLocation = "";
 
   bool m_useIntegratedSensor = true;
   bool m_useNEOSensor = true;

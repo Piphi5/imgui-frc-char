@@ -22,6 +22,12 @@ const char* Generator::kMotorControllers[] = {
 void Generator::SelectProjectLocation() {
   if (m_folderSelector && m_folderSelector->ready()) {
     m_projectLocation = m_folderSelector->result();
+    m_modifiedLocation = m_projectLocation;
+
+    const char* home = std::getenv("HOME");
+    size_t index = m_modifiedLocation.find(home);
+    if (index != std::string::npos)
+      m_modifiedLocation.replace(index, std::strlen(home), "~");
     m_folderSelector.reset();
   }
 }
@@ -200,15 +206,8 @@ void Generator::Initialize() {
     f.Scale *= 0.85;
     ImGui::PushFont(&f);
 
-    std::string modifiedLocation = m_projectLocation;
-    const char* home = std::getenv("HOME");
-    size_t index = modifiedLocation.find(home);
-    if (index != std::string::npos) {
-      modifiedLocation.replace(index, std::strlen(home), "~");
-    }
-
-    ImGui::InputText("##label", const_cast<char*>(modifiedLocation.c_str()),
-                     modifiedLocation.capacity() + 1,
+    ImGui::InputText("##label", const_cast<char*>(m_modifiedLocation.c_str()),
+                     m_modifiedLocation.capacity() + 1,
                      ImGuiInputTextFlags_ReadOnly);
     ImGui::PopFont();
     ImGui::SameLine();
