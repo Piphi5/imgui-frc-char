@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 
+#include "backend/ProjectCreator.h"
 #include "FRCCharacterizationGUI.h"
 
 using namespace frcchar;
@@ -37,8 +38,9 @@ void Generator::SelectProjectLocation() {
 }
 
 void Generator::GenerateProject() {
-  m_generationStatus = std::async(std::launch::async, [] {
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+  m_generationStatus = std::async(std::launch::async, [&] {
+    ProjectCreator::CreateProject(m_projectLocation,
+                                  std::string(m_projectName));
   });
 }
 
@@ -214,14 +216,17 @@ void Generator::Initialize() {
     ImGui::Spacing();
     ImGui::Text("Project Generation");
 
-    ImGui::SetNextItemWidth(width * 0.6);
+    ImGui::SetNextItemWidth(width * 0.5);
+    ImGui::InputText("##labela", m_projectName, IM_ARRAYSIZE(m_projectName));
+
+    ImGui::SetNextItemWidth(width * 0.5);
 
     // Scale the font size down to fit more of the path.
     ImFont f = *ImGui::GetFont();
     f.Scale *= 0.85;
     ImGui::PushFont(&f);
 
-    ImGui::InputText("##label", const_cast<char*>(m_modifiedLocation.c_str()),
+    ImGui::InputText("##labelb", const_cast<char*>(m_modifiedLocation.c_str()),
                      m_modifiedLocation.capacity() + 1,
                      ImGuiInputTextFlags_ReadOnly);
     ImGui::PopFont();

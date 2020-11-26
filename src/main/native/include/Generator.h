@@ -39,6 +39,7 @@ class Generator {
   size_t m_motorPortsUsed = 1;
 
   char m_gyroPort[40] = "SPI.Port.kMXP";
+  char m_projectName[40] = "frc-characterization";
   std::string m_projectLocation = "Choose Location...";
   std::string m_modifiedLocation = "";
 
