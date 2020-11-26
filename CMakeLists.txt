@@ -21,15 +21,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 file(GLOB_RECURSE imgui-frc-char-sources src/main/native/cpp/*.cpp)
 file(GLOB_RECURSE imgui-frc-char-headers src/main/native/include/*.h)
 
+add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
 if (APPLE)
-  add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
   set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
 else()
-  add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
+set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-lstdc++fs")
 endif()
 
 target_compile_options(imgui-frc-char PRIVATE -Wall -pedantic -Wextra -Werror -Wno-unused-parameter -Wno-error=deprecated-declarations)
-
 target_include_directories(imgui-frc-char PUBLIC src/main/native/include)
 
 # Link to imgui and WPILib.

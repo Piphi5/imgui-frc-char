@@ -2,6 +2,14 @@
 
 #include "backend/ProjectCreator.h"
 
+#if defined(__GNUG__) && !defined(__clang__) && __GNUC__ < 8
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 #include <filesystem>
 #include <system_error>
 
@@ -15,19 +23,18 @@ using namespace frcchar;
 void ProjectCreator::CreateProject(const std::string& dir,
                                    const std::string& name, int team) {
   // Check if the project directory exists.
-  std::filesystem::path p =
-      dir + (dir.back() == std::filesystem::path::preferred_separator
-                 ? name
-                 : std::filesystem::path::preferred_separator + name);
-  bool exists = std::filesystem::exists(p);
+  std::filesystem::path p = dir + (dir.back() == fs::path::preferred_separator
+                                       ? name
+                                       : fs::path::preferred_separator + name);
+  bool exists = fs::exists(p);
 
   auto p1 = p;
   p1.append(".wpilib");
 
   // Create the directory if the project directory does not exist.
   if (!exists) {
-    std::filesystem::create_directory(p);
-    std::filesystem::create_directory(p1);
+    fs::create_directory(p);
+    fs::create_directory(p1);
   }
 
   // Create the build.gradle.
