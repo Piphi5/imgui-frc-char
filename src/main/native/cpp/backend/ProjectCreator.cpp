@@ -22,9 +22,9 @@ using namespace frcchar;
 void ProjectCreator::CreateProject(const std::string& dir,
                                    const std::string& name, int team) {
   // Check if the project directory exists.
-  std::filesystem::path p = dir + (dir.back() == fs::path::preferred_separator
-                                       ? name
-                                       : fs::path::preferred_separator + name);
+  fs::path p = dir + (dir.back() == fs::path::preferred_separator
+                          ? name
+                          : fs::path::preferred_separator + name);
   bool exists = fs::exists(p);
 
   auto p1 = p;
