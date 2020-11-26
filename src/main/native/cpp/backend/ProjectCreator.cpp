@@ -10,7 +10,6 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-#include <filesystem>
 #include <system_error>
 
 #include <wpi/json.h>

@@ -25,7 +25,7 @@ add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers
 if (APPLE)
   set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-framework Metal -framework QuartzCore")
 else()
-set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-lstdc++fs")
+  set_target_properties(imgui-frc-char PROPERTIES LINK_FLAGS "-lstdc++fs")
 endif()
 
 target_compile_options(imgui-frc-char PRIVATE -Wall -pedantic -Wextra -Werror -Wno-unused-parameter -Wno-error=deprecated-declarations)
