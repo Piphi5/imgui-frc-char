@@ -1,3 +1,5 @@
+// MIT License
+
 #pragma once
 
 constexpr char kBuildGradleContents[] = R"(plugins {

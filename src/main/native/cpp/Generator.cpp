@@ -7,8 +7,8 @@
 
 #include <cstdlib>
 
-#include "backend/ProjectCreator.h"
 #include "FRCCharacterizationGUI.h"
+#include "backend/ProjectCreator.h"
 
 using namespace frcchar;
 
@@ -39,8 +39,8 @@ void Generator::SelectProjectLocation() {
 
 void Generator::GenerateProject() {
   m_generationStatus = std::async(std::launch::async, [&] {
-    ProjectCreator::CreateProject(m_projectLocation,
-                                  std::string(m_projectName));
+    ProjectCreator::CreateProject(m_projectLocation, std::string(m_projectName),
+                                  m_teamNumber);
   });
 }
 
