@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Configure CMake
-        run: mkdir && cd build && cmake ..
+        run: mkdir build && cd build && cmake ..
       
       - name: Build
         run: cd build && make -j3
