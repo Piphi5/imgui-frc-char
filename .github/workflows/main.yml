@@ -3,32 +3,24 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-20.04
-    container: wpilib/ubuntu-base:18.04
-    name: Build - Linux
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS
+          - os: ubuntu-20.04
+            name: Linux
+    
+    runs-on: ${{ matrix.os }}
+    name: "Build - ${{ matrix.name }}"
     steps:
-      - uses: actions/checkout@v2
-        name: Checkout
-
+      - name: Checkout
+        uses: actions/checkout@v2
+      
       - name: Configure CMake
-        run: mkdir build && cd build && cmake ..
-
-      - name: Build
-        run: cd build && make -j3
-
-  build-macos:
-    runs-on: macos-11.0
-    name: Build - macOS
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout
-
-      - name: Select Xcode 12
-        run: sudo xcode-select -s /Applications/Xcode_12.3.app
-
-      - name: Configure CMake
-        run: mkdir build && cd build && cmake ..
-
+        run: mkdir && cd build && cmake ..
+      
       - name: Build
         run: cd build && make -j3

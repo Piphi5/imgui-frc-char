@@ -1,9 +1,10 @@
 // MIT License
 
-#include "Logger.h"
+#include "display/Logger.h"
 
 #include <imgui.h>
 #include <networktables/NetworkTableInstance.h>
+#include <wpi/raw_ostream.h>
 
 #include <array>
 #include <chrono>
@@ -11,16 +12,16 @@
 #include <iostream>
 #include <thread>
 
-#include "FRCCharacterizationGUI.h"
+#include "display/FRCCharacterization.h"
 
 using namespace frcchar;
 
 void Logger::Initialize() {
   // Add a new window to the GUI.
-  FRCCharacterizationGUI::AddWindow("Logger", [&] {
+  FRCCharacterization::AddWindow("Logger", [&] {
     // Get the current width of the window. This will be used to scale our UI
     // elements.
-    int width = ImGui::GetContentRegionAvail().x;
+    float width = ImGui::GetContentRegionAvail().x;
 
     // Display information about the test type.
     ImGui::Text("%s", ("Project Type: " + m_projectType).c_str());
@@ -120,6 +121,37 @@ void Logger::Initialize() {
     createTestButtons("Dynamic Forward", false);
     createTestButtons("Dynamic Backward", false);
     if (m_projectType == "Drivetrain") createTestButtons("Track Width", false);
+
+    // Create new section for file saving settings.
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::Text("Save Settings");
+
+    // Scale the font size down to fit more of the path.
+    ImFont f = *ImGui::GetFont();
+    f.Scale *= 0.85;
+    ImGui::PushFont(&f);
+
+    ImGui::SetNextItemWidth(width / 1.5);
+    ImGui::InputText("##label", const_cast<char*>(m_modifiedLocation.c_str()),
+                     m_modifiedLocation.capacity() + 1,
+                     ImGuiInputTextFlags_ReadOnly);
+    ImGui::PopFont();
+    ImGui::SameLine();
+
+    if (ImGui::Button("Choose..."))
+      m_folderSelector = std::make_unique<pfd::select_folder>("Select Folder");
+
+    SelectDataFolder();
+
+    ImGui::SameLine();
+    if (ImGui::Button("Save")) CreateDataFile();
+
+    if (m_exception) {
+      auto ex = m_exception;
+      m_exception = std::exception_ptr();
+      std::rethrow_exception(ex);
+    }
   });
 }
 
@@ -132,24 +164,32 @@ void Logger::AttemptNTConnection() {
     using std::chrono::system_clock;
     using std::chrono::seconds;
 
-    // Get the current time.
-    auto startTime = system_clock::now();
-
-    // Attempt connection.
-    if (m_teamNumber == 0)
-      nt::NetworkTableInstance::GetDefault().StartClient("localhost");
-    else
-      nt::NetworkTableInstance::GetDefault().StartClientTeam(m_teamNumber);
-
-    // Wait for connection success or 3 seconds of connection failure.
     bool connected = false;
-    while (!(connected || system_clock::now() - startTime > seconds(3)))
-      // Check whether a connection has been established.
-      connected = nt::NetworkTableInstance::GetDefault().IsConnected();
 
-    // If there was no connection established, we can stop attempting to
-    // connect.
-    if (!connected) nt::NetworkTableInstance::GetDefault().StopClient();
+    try {
+      // Get the current time.
+      auto startTime = system_clock::now();
+
+      // Attempt connection.
+      if (m_teamNumber == 0)
+        nt::NetworkTableInstance::GetDefault().StartClient("localhost");
+      else
+        nt::NetworkTableInstance::GetDefault().StartClientTeam(m_teamNumber);
+
+      // Wait for connection success or 3 seconds of connection failure.
+      while (!(connected || system_clock::now() - startTime > seconds(3)))
+        // Check whether a connection has been established.
+        connected = nt::NetworkTableInstance::GetDefault().IsConnected();
+
+      // If there was no connection established, we can stop attempting to
+      // connect.
+      if (!connected) {
+        nt::NetworkTableInstance::GetDefault().StopClient();
+        throw std::runtime_error("Connection was not established!");
+      }
+    } catch (const std::exception& e) {
+      m_exception = std::current_exception();
+    }
 
     // Return the connection status.
     return connected;
@@ -159,4 +199,30 @@ void Logger::AttemptNTConnection() {
 bool Logger::IsNTConnectionStatusReady() const {
   return m_ntConnectionStatus.wait_for(std::chrono::seconds(0)) !=
          std::future_status::timeout;
+}
+void Logger::SelectDataFolder() {
+  if (m_folderSelector && m_folderSelector->ready()) {
+    m_fileLocation = m_folderSelector->result();
+    m_modifiedLocation = m_fileLocation;
+
+    const char* home = std::getenv("HOME");
+    if (home) {
+      size_t len = std::strlen(home);
+      bool trailingSlash = home[len - 1] == '/';
+      size_t index = m_modifiedLocation.find(home);
+      if (index != std::string::npos)
+        m_modifiedLocation.replace(index, len, trailingSlash ? "~/" : "~");
+    }
+
+    m_folderSelector.reset();
+  }
+}
+void Logger::CreateDataFile() {
+  m_fileCreationStatus = std::async(std::launch::async, [&] {
+    try {
+      throw std::runtime_error("This is not implemented yet.");
+    } catch (const std::exception& e) {
+      m_exception = std::current_exception();
+    }
+  });
 }

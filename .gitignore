@@ -2,3 +2,6 @@
 build/*
 .DS_Store
 xcode/
+.idea/
+buildcmake/
+cmake-build-debug/

@@ -1,13 +1,13 @@
 // MIT License
 
-#include "Generator.h"
+#include "display/Generator.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <cstdlib>
 
-#include "FRCCharacterizationGUI.h"
+#include "display/FRCCharacterization.h"
 #include "backend/ProjectCreator.h"
 
 using namespace frcchar;
@@ -39,8 +39,12 @@ void Generator::SelectProjectLocation() {
 
 void Generator::GenerateProject() {
   m_generationStatus = std::async(std::launch::async, [&] {
-    ProjectCreator::CreateProject(m_projectLocation, std::string(m_projectName),
-                                  m_teamNumber);
+    try {
+      ProjectCreator::CreateProject(m_projectLocation,
+                                    std::string(m_projectName), m_teamNumber);
+    } catch (const std::exception& e) {
+      m_exception = std::current_exception();
+    }
   });
 }
 
@@ -51,7 +55,7 @@ bool Generator::IsGenerationReady() const {
 
 void Generator::Initialize() {
   // Add a new window to the GUI.
-  FRCCharacterizationGUI::AddWindow("Generator", [&] {
+  FRCCharacterization::AddWindow("Generator", [&] {
     // Get the current width of the window. This will be used to scale the UI
     // elements.
     int width = ImGui::GetContentRegionAvail().x;
@@ -255,6 +259,24 @@ void Generator::Initialize() {
     if (disabled) {
       ImGui::PopItemFlag();
       ImGui::PopStyleVar();
+    }
+
+    if (ImGui::Button("Deploy Project")) DeployProject();
+
+    // Handle any exceptions that are thrown from our threads.
+    if (m_exception) {
+      auto ex = m_exception;
+      m_exception = std::exception_ptr();
+      std::rethrow_exception(ex);
+    }
+  });
+}
+void Generator::DeployProject() {
+  m_deployStatus = std::async(std::launch::async, [&] {
+    try {
+      throw std::runtime_error("Deploying of projects is not implemented yet.");
+    } catch (const std::exception& e) {
+      m_exception = std::current_exception();
     }
   });
 }

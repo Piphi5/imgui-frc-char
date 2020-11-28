@@ -2,8 +2,12 @@
 
 #pragma once
 
+#include <exception>
 #include <future>
+#include <memory>
 #include <string>
+
+#include <portable-file-dialogs.h>
 
 namespace frcchar {
 class Logger {
@@ -31,15 +35,26 @@ class Logger {
    */
   bool IsNTConnectionStatusReady() const;
 
+  void SelectDataFolder();
+
+  void CreateDataFile();
+
  private:
   // NT Connection State
   std::future<bool> m_ntConnectionStatus;
   bool m_ntNeedsReset = false;
   bool m_lastNTConnection = false;
+  std::exception_ptr m_exception;
 
   // Project Settings
   std::string m_projectType = "Drivetrain";
   int m_teamNumber = 0;
+  std::unique_ptr<pfd::select_folder> m_folderSelector;
+
+  std::string m_fileLocation;
+  std::string m_modifiedLocation;
+
+  std::future<void> m_fileCreationStatus;
 
   // Voltage Settings
   float m_quasistaticRampVoltage = 0.25f;

@@ -1,8 +1,9 @@
 // MIT License
 
-#include "FRCCharacterizationGUI.h"
+#include "display/FRCCharacterization.h"
 
 #include <wpigui.h>
+#include <wpi/raw_ostream.h>
 
 #include <functional>
 #include <vector>
@@ -33,18 +34,19 @@ struct Window {
 static std::vector<Window> gWindows;
 static std::vector<std::function<void()>> gMenus;
 static std::vector<std::function<void()>> gOptionMenus;
+static std::string gException = "";
 
-void FRCCharacterizationGUI::AddMainMenu(std::function<void()> menu) {
+void FRCCharacterization::AddMainMenu(std::function<void()> menu) {
   if (menu) gMenus.emplace_back(std::move(menu));
 }
 
-void FRCCharacterizationGUI::AddOptionMenu(std::function<void()> menu) {
+void FRCCharacterization::AddOptionMenu(std::function<void()> menu) {
   if (menu) gOptionMenus.emplace_back(std::move(menu));
 }
 
-void FRCCharacterizationGUI::GlobalInit() { wpi::gui::CreateContext(); }
+void FRCCharacterization::GlobalInit() { wpi::gui::CreateContext(); }
 
-bool FRCCharacterizationGUI::Initialize() {
+bool FRCCharacterization::Initialize() {
   // Scale default window positions.
   wpi::gui::AddWindowScaler([](float windowScale) {
     for (auto&& window : gWindows) {
@@ -63,8 +65,18 @@ bool FRCCharacterizationGUI::Initialize() {
     ImGui::EndMainMenuBar();
 
     for (auto&& window : gWindows) {
-      if (ImGui::Begin(window.name)) {
-        window.display();
+      try {
+        if (ImGui::Begin(window.name)) {
+          window.display();
+        }
+      } catch (const std::exception& e) {
+        gException = e.what();
+        ImGui::OpenPopup("Exception!");
+      }
+      if (ImGui::BeginPopupModal("Exception!")) {
+        ImGui::Text("%s", gException.c_str());
+        if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
       }
       ImGui::End();
     }
@@ -74,14 +86,14 @@ bool FRCCharacterizationGUI::Initialize() {
   return true;
 }
 
-void FRCCharacterizationGUI::Main() { wpi::gui::Main(); }
-void FRCCharacterizationGUI::Exit() { wpi::gui::Exit(); }
+void FRCCharacterization::Main() { wpi::gui::Main(); }
+void FRCCharacterization::Exit() { wpi::gui::Exit(); }
 
-void FRCCharacterizationGUI::Add(std::function<void()> initialize) {
+void FRCCharacterization::Add(std::function<void()> initialize) {
   wpi::gui::AddInit(std::move(initialize));
 }
 
-void FRCCharacterizationGUI::AddWindow(const char* name,
-                                       std::function<void()> window) {
+void FRCCharacterization::AddWindow(const char* name,
+                                    std::function<void()> window) {
   gWindows.emplace_back(name, window);
 }

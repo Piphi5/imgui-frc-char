@@ -1,26 +1,27 @@
 // MIT License
 
-#include <wpigui.h>
+#include <wpi/raw_ostream.h>
 
-#include <cstdlib>
-
-#include "FRCCharacterizationGUI.h"
-#include "Generator.h"
-#include "Logger.h"
+#include "display/Analyzer.h"
+#include "display/FRCCharacterization.h"
+#include "display/Generator.h"
+#include "display/Logger.h"
 
 using namespace frcchar;
 
 int main() {
-  FRCCharacterizationGUI::GlobalInit();
+  FRCCharacterization::GlobalInit();
 
   Logger logger;
   Generator generator;
+  Analyzer analyzer;
 
-  FRCCharacterizationGUI::Add([&generator] { generator.Initialize(); });
-  FRCCharacterizationGUI::Add([&logger] { logger.Initialize(); });
+  FRCCharacterization::Add([&generator] { generator.Initialize(); });
+  FRCCharacterization::Add([&logger] { logger.Initialize(); });
+  FRCCharacterization::Add([&analyzer] { analyzer.Initialize(); });
 
-  if (!FRCCharacterizationGUI::Initialize()) return 0;
+  if (!FRCCharacterization::Initialize()) return 0;
 
-  FRCCharacterizationGUI::Main();
-  FRCCharacterizationGUI::Exit();
+  FRCCharacterization::Main();
+  FRCCharacterization::Exit();
 }

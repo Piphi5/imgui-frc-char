@@ -15,8 +15,6 @@ namespace fs = std::filesystem;
 #include <wpi/json.h>
 #include <wpi/raw_ostream.h>
 
-#include "generated/BuildGradle.h"
-
 using namespace frcchar;
 
 void ProjectCreator::CreateProject(const std::string& dir,
@@ -39,7 +37,9 @@ void ProjectCreator::CreateProject(const std::string& dir,
   // Create the build.gradle.
   std::error_code ec;
   wpi::raw_fd_ostream gradle(p.string() + "/build.gradle", ec);
-  gradle << kBuildGradleContents << "\n";
+  gradle <<
+#include "generated/BuildGradle.h"
+      ;
   gradle.close();
 
   // Create the .wpilib/wpilib_preferences.json
@@ -54,4 +54,14 @@ void ProjectCreator::CreateProject(const std::string& dir,
   properties.close();
 
   if (ec) wpi::outs() << ec.message() << "\n";
+}
+
+void ProjectCreator::DeployProject(const std::string& dir,
+                                   const std::string& name, int team) {
+  fs::path p = dir + (dir.back() == fs::path::preferred_separator
+                          ? name
+                          : fs::path::preferred_separator + name);
+  if (!fs::exists(p)) {
+    throw std::runtime_error("The project does not exist.");
+  }
 }
