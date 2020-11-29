@@ -11,6 +11,8 @@
 
 #include <wpi/SmallVector.h>
 
+#include "backend/ProjectCreator.h"
+
 namespace frcchar {
 class Generator {
  public:
@@ -49,6 +51,8 @@ class Generator {
   bool m_useNEOSensor = true;
 
   std::exception_ptr m_exception;
+
+  std::string m_deployOutput = "";
 
   std::future<void> m_generationStatus;
   std::future<void> m_deployStatus;

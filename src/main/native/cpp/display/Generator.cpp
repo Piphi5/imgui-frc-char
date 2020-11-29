@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <wpi/raw_ostream.h>
 
 #include <cstdlib>
 
@@ -39,9 +40,9 @@ void Generator::SelectProjectLocation() {
 
 void Generator::GenerateProject() {
   m_generationStatus = std::async(std::launch::async, [&] {
+    ProjectCreator m_creator(m_projectLocation, m_projectName, m_teamNumber);
     try {
-      ProjectCreator::CreateProject(m_projectLocation,
-                                    std::string(m_projectName), m_teamNumber);
+      m_creator.CreateProject();
     } catch (const std::exception& e) {
       m_exception = std::current_exception();
     }
@@ -261,7 +262,21 @@ void Generator::Initialize() {
       ImGui::PopStyleVar();
     }
 
-    if (ImGui::Button("Deploy Project")) DeployProject();
+    if (ImGui::Button("Deploy Project")) {
+      ImGui::OpenPopup("Deploy Status...");
+      DeployProject();
+    }
+
+    auto size = ImGui::GetIO().DisplaySize;
+
+    ImGui::SetNextWindowSize(ImVec2(size.x / 2, size.y * 0.95));
+    if (ImGui::BeginPopupModal("Deploy Status...")) {
+      ImGui::Text("%s", m_deployOutput.c_str());
+      ImGui::Separator();
+      ImGui::Spacing();
+      if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+      ImGui::EndPopup();
+    }
 
     // Handle any exceptions that are thrown from our threads.
     if (m_exception) {
@@ -274,7 +289,8 @@ void Generator::Initialize() {
 void Generator::DeployProject() {
   m_deployStatus = std::async(std::launch::async, [&] {
     try {
-      throw std::runtime_error("Deploying of projects is not implemented yet.");
+      ProjectCreator m_creator(m_projectLocation, m_projectName, m_teamNumber);
+      m_creator.DeployProject(&m_deployOutput);
     } catch (const std::exception& e) {
       m_exception = std::current_exception();
     }

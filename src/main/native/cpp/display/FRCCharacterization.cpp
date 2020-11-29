@@ -82,8 +82,7 @@ bool FRCCharacterization::Initialize() {
     }
   });
 
-  if (!wpi::gui::Initialize("FRC Characterization", 1280, 720)) return false;
-  return true;
+  return wpi::gui::Initialize("FRC Characterization", 1280, 720);
 }
 
 void FRCCharacterization::Main() { wpi::gui::Main(); }
