@@ -1,6 +1,9 @@
+// MIT License
+
 #include "display/Analyzer.h"
 
 #include <imgui.h>
+
 #include <wpi/raw_ostream.h>
 
 #include "display/FRCCharacterization.h"

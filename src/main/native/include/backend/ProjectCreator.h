@@ -4,11 +4,14 @@
 
 #if defined(__GNUG__) && !defined(__clang__) && __GNUC__ < 8
 #include <experimental/filesystem>
+
 namespace fs = std::experimental::filesystem;
 #else
 #include <filesystem>
 namespace fs = std::filesystem;
 #endif
+
+#include <wpi/Error.h>
 
 #include <exception>
 #include <string>
@@ -17,18 +20,17 @@ namespace fs = std::filesystem;
 namespace frcchar {
 class ProjectCreator {
  public:
-  ProjectCreator(std::string dir, std::string name, int team)
-      : m_dir(std::move(dir)), m_name(std::move(name)), m_team(team) {}
+  ProjectCreator(const std::string& dir, const std::string& name,
+                 const int& team);
 
   void CreateProject();
   void DeployProject(std::string* result);
 
-
  private:
-  std::string m_dir;
-  std::string m_name;
-  int m_team;
+  const std::string& m_dir;
+  const std::string& m_name;
+  const int& m_team;
 
-  fs::path m_thisProject;
+  LLVM_NODISCARD fs::path GetProjectPath() const;
 };
 }  // namespace frcchar

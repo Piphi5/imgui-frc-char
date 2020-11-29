@@ -1,10 +1,12 @@
+// MIT License
+
 #pragma once
+
+#include <portable-file-dialogs.h>
 
 #include <exception>
 #include <memory>
 #include <string>
-
-#include <portable-file-dialogs.h>
 
 namespace frcchar {
 class Analyzer {

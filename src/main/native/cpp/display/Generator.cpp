@@ -4,12 +4,14 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <wpi/raw_ostream.h>
+#include <imgui_stdlib.h>
 
 #include <cstdlib>
 
-#include "display/FRCCharacterization.h"
+#include <wpi/raw_ostream.h>
+
 #include "backend/ProjectCreator.h"
+#include "display/FRCCharacterization.h"
 
 using namespace frcchar;
 
@@ -40,7 +42,6 @@ void Generator::SelectProjectLocation() {
 
 void Generator::GenerateProject() {
   m_generationStatus = std::async(std::launch::async, [&] {
-    ProjectCreator m_creator(m_projectLocation, m_projectName, m_teamNumber);
     try {
       m_creator.CreateProject();
     } catch (const std::exception& e) {
@@ -222,7 +223,7 @@ void Generator::Initialize() {
     ImGui::Text("Project Generation");
 
     ImGui::SetNextItemWidth(width * 0.5);
-    ImGui::InputText("##labela", m_projectName, IM_ARRAYSIZE(m_projectName));
+    ImGui::InputText("##labela", &m_projectName);
 
     ImGui::SetNextItemWidth(width * 0.5);
 
@@ -271,9 +272,15 @@ void Generator::Initialize() {
 
     ImGui::SetNextWindowSize(ImVec2(size.x / 2, size.y * 0.95));
     if (ImGui::BeginPopupModal("Deploy Status...")) {
+      ImGui::Text("GradleRIO Output");
+
+      ImGui::PushFont(&f);
       ImGui::Text("%s", m_deployOutput.c_str());
+      ImGui::PopFont();
+
       ImGui::Separator();
       ImGui::Spacing();
+
       if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
       ImGui::EndPopup();
     }
@@ -286,10 +293,11 @@ void Generator::Initialize() {
     }
   });
 }
+
 void Generator::DeployProject() {
   m_deployStatus = std::async(std::launch::async, [&] {
     try {
-      ProjectCreator m_creator(m_projectLocation, m_projectName, m_teamNumber);
+      m_deployOutput = "";
       m_creator.DeployProject(&m_deployOutput);
     } catch (const std::exception& e) {
       m_exception = std::current_exception();

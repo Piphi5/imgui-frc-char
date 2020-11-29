@@ -1,3 +1,7 @@
+// MIT License
+
+#pragma once
+
 R"foo(plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2021.1.1-beta-1"

@@ -3,10 +3,11 @@
 #include "display/FRCCharacterization.h"
 
 #include <wpigui.h>
-#include <wpi/raw_ostream.h>
 
 #include <functional>
 #include <vector>
+
+#include <wpi/raw_ostream.h>
 
 using namespace frcchar;
 

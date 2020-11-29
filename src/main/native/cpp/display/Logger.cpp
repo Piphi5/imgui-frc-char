@@ -4,13 +4,14 @@
 
 #include <imgui.h>
 #include <networktables/NetworkTableInstance.h>
-#include <wpi/raw_ostream.h>
 
 #include <array>
 #include <chrono>
 #include <future>
 #include <iostream>
 #include <thread>
+
+#include <wpi/raw_ostream.h>
 
 #include "display/FRCCharacterization.h"
 
