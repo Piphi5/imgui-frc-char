@@ -6,18 +6,27 @@
 #include <Eigen/SVD>
 #include <frc/controller/LinearQuadraticRegulator.h>
 #include <frc/system/plant/LinearSystemId.h>
+#include <wpi/raw_ostream.h>
 
 using namespace frcchar;
 
 DataProcessor::FeedforwardGains DataProcessor::CalculateFeedforwardGains(
     const std::vector<DataProcessor::Data>& data) {
-  // https://genome.sph.umich.edu/w/images/2/2c/Biostat615-lecture14-presentation.pdf
+  // The linear model can be written as follows:
+  // y = Xβ + u, where y is the dependent observed variable, X is the matrix of
+  // independent variables, β is a vector of coefficients, and u is a vector of
+  // residuals.
+
+  // We want to minimize u^2 = u'u = (y - Xβ)'(y - Xβ).
+  // β = (X'X)^-1 (X'y)
+
+  // Get the number of elements.
   int n = data.size();
-  int p = 3;
 
   Eigen::MatrixXd y(n, 1);
-  Eigen::MatrixXd X(n, p);
+  Eigen::MatrixXd X(n, 3);
 
+  // Fill the y and X matrices.
   for (int i = 0; i < n; ++i) {
     // Get the data point at this index.
     const auto& pt = data.at(i);
@@ -27,18 +36,33 @@ DataProcessor::FeedforwardGains DataProcessor::CalculateFeedforwardGains(
 
     // Add velocity and acceleration to x. We add 1 for the initial column to
     // calculate the intercept.
-    X(i, 0) = 1;
+    X(i, 0) = pt.velocity.to<double>() > 0 ? 1 : -1;
     X(i, 1) = pt.velocity.to<double>();
     X(i, 2) = pt.acceleration.to<double>();
   }
 
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(
-      X, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  Eigen::MatrixXd betasSvd = svd.solve(y);
+  // Calculate b = β that minimizes u'u.
+  Eigen::MatrixXd b = (X.transpose() * X).ldlt().solve(X.transpose() * y);
 
-  return FeedforwardGains{units::volt_t(betasSvd(0, 0)),
-                          decltype(1_V / 1_mps)(betasSvd(1, 0)),
-                          decltype(1_V / 1_mps_sq)(betasSvd(2, 0))};
+  // We will now calculate r^2 or the coefficient of determination, which tells
+  // us how much of the total variation (variation in y) can be explained by the
+  // regression model.
+
+  // We will first calculate the sum of the squares of the error, or the
+  // variation in error (SSE).
+  double SSE = (y - X * b).squaredNorm();
+
+  // Now we will calculate the total variation in y, known as SSTO.
+  double SSTO =
+      ((y.transpose() * y) -
+       (1 / n) * (y.transpose() * Eigen::MatrixXd::Identity(n, n) * y))(0, 0);
+
+  double rSquared = (SSTO - SSE) / SSTO;
+  double adjRSquared = 1 - (1 - rSquared) * ((n - 1) / (n - 3));
+
+  return FeedforwardGains{units::volt_t(b(0, 0)),
+                          decltype(1_V / 1_mps)(b(1, 0)),
+                          decltype(1_V / 1_mps_sq)(b(2, 0)), adjRSquared};
 }
 DataProcessor::FeedbackGains DataProcessor::CalculatePositionFeedbackGains(
     const DataProcessor::FeedforwardGains& ff, units::meter_t qp,

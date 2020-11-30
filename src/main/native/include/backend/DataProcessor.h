@@ -23,6 +23,8 @@ class DataProcessor {
     units::volt_t Ks;
     decltype(1_V / 1_mps) Kv;
     decltype(1_V / 1_mps_sq) Ka;
+
+    double rSquared;
   };
 
   struct FeedbackGains {
