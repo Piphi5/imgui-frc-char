@@ -26,7 +26,7 @@ file(GLOB_RECURSE imgui-frc-char-headers src/main/native/include/*.h)
 file(GLOB_RECURSE robot-project ${CMAKE_SOURCE_DIR}/robot-project/*)
 
 # Add the main executable.
-add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers})
+add_executable(imgui-frc-char ${imgui-frc-char-sources} ${imgui-frc-char-headers} src/main/native/include/backend/DataProcessor.h src/main/native/cpp/backend/DataProcessor.cpp)
 
 # Set platform-specific options.
 if (APPLE)

@@ -54,10 +54,10 @@ void ProjectCreator::CreateProject() {
 
 void ProjectCreator::DeployProject(std::string* result) {
   std::array<char, 128> buffer{};
-  auto pipe =
-      popen(std::string("cd " + GetProjectPath().string() + ";./gradlew deploy")
-                .c_str(),
-            "r");
+  auto pipe = popen(
+      std::string("cd " + GetProjectPath().string() + ";./gradlew deploy 2>&1")
+          .c_str(),
+      "r");
   if (!pipe) throw std::runtime_error("The command failed to execute.");
 
   while (!feof(pipe)) {

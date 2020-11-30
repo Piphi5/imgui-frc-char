@@ -2,6 +2,7 @@
 
 #include <wpi/raw_ostream.h>
 
+#include "backend/DataProcessor.h"
 #include "display/Analyzer.h"
 #include "display/FRCCharacterization.h"
 #include "display/Generator.h"
@@ -11,6 +12,12 @@ using namespace frcchar;
 
 int main() {
   FRCCharacterization::GlobalInit();
+
+  DataProcessor processor;
+  std::vector<DataProcessor::Data> data;
+  data.push_back(DataProcessor::Data{11_V, 3_mps, 37_mps_sq});
+  data.push_back(DataProcessor::Data{10_V, 1_mps, 35_mps_sq});
+  processor.CalculateFeedforwardGains(DataProcessor::TestInfo{data, true});
 
   Logger logger;
   Generator generator;
