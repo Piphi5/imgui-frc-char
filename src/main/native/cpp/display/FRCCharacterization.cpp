@@ -86,7 +86,10 @@ bool FRCCharacterization::Initialize() {
   return wpi::gui::Initialize("FRC Characterization", 1280, 720);
 }
 
-void FRCCharacterization::Main() { wpi::gui::Main(); }
+void FRCCharacterization::Main() {
+  wpi::gui::Main();
+  wpi::gui::DestroyContext();
+}
 void FRCCharacterization::Exit() { wpi::gui::Exit(); }
 
 void FRCCharacterization::Add(std::function<void()> initialize) {
