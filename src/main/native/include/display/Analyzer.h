@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+#include "backend/DataProcessor.h"
+
 namespace frcchar {
 class Analyzer {
  public:
@@ -21,14 +23,11 @@ class Analyzer {
   std::string m_fileLocation;
   std::string m_modifiedLocation;
 
-  double Ks = 0.0;
-  double Kv = 0.0;
-  double Ka = 0.0;
-  double Rs = 0.0;
-  
-  double Kp = 0.0;
-  double Kd = 0.0;
-  
+  DataProcessor::FFGains m_ffGains{0_V, 0_V / 1_mps, 0_V / 1_mps_sq, 0.0};
+  DataProcessor::FBGains m_fbGains{0.0, 0.0};
+  DataProcessor::GainPreset m_preset{true, 20_ms, 0_s, 1 / 1_V, true};
+  DataProcessor::LQRParameters m_params{1_m, 1.5_mps, 7_V};
+
   std::exception_ptr m_exception;
 };
 }  // namespace frcchar

@@ -44,4 +44,4 @@ target_compile_options(imgui-frc-char PRIVATE -Wall -pedantic -Wextra -Werror -W
 target_include_directories(imgui-frc-char PUBLIC src/main/native/include)
 
 # Link to imgui and WPILib.
-target_link_libraries(imgui-frc-char PUBLIC wpigui imgui wpimath ntcore wpiutil)
+target_link_libraries(imgui-frc-char PUBLIC libglass wpigui imgui wpimath ntcore wpiutil)

@@ -19,7 +19,7 @@ using namespace frcchar;
 
 void Logger::Initialize() {
   // Add a new window to the GUI.
-  FRCCharacterization::AddWindow("Logger", [&] {
+  FRCCharacterization::Manager.AddWindow("Logger", [&] {
     // Get the current width of the window. This will be used to scale our UI
     // elements.
     float width = ImGui::GetContentRegionAvail().x;

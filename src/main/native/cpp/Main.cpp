@@ -1,5 +1,7 @@
 // MIT License
 
+#include <glass/Context.h>
+#include <wpigui.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
@@ -13,18 +15,39 @@
 using namespace frcchar;
 
 int main() {
+  // Create the Dear ImGui context and the Glass context.
+  wpi::gui::CreateContext();
+  glass::CreateContext();
+
+  // Initialize FRC Characterization.
   FRCCharacterization::GlobalInit();
 
+  // Add our widgets to the application.
   Logger logger;
-  Generator generator;
   Analyzer analyzer;
+  Generator generator;
 
-  FRCCharacterization::Add([&generator] { generator.Initialize(); });
-  FRCCharacterization::Add([&logger] { logger.Initialize(); });
-  FRCCharacterization::Add([&analyzer] { analyzer.Initialize(); });
+  wpi::gui::AddInit([&] {
+    logger.Initialize();
+    analyzer.Initialize();
+    generator.Initialize();
+  });
 
-  if (!FRCCharacterization::Initialize()) return 0;
+  // Add the list of widgets to the menu bar.
+  FRCCharacterization::MenuBar.AddMainMenu([] {
+    if (ImGui::BeginMenu("Widgets")) {
+      FRCCharacterization::Manager.DisplayMenu();
+      ImGui::EndMenu();
+    }
+  });
 
-  FRCCharacterization::Main();
-  FRCCharacterization::Exit();
+  // Start the Dear ImGui application.
+  wpi::gui::Initialize("FRC Characterization", 1280, 720);
+
+  // Run the main loop.
+  wpi::gui::Main();
+
+  // Destroy contexts and exit.
+  glass::DestroyContext();
+  wpi::gui::DestroyContext();
 }

@@ -57,7 +57,7 @@ bool Generator::IsGenerationReady() const {
 
 void Generator::Initialize() {
   // Add a new window to the GUI.
-  FRCCharacterization::AddWindow("Generator", [&] {
+  FRCCharacterization::Manager.AddWindow("Generator", [&] {
     // Get the current width of the window. This will be used to scale the UI
     // elements.
     int width = ImGui::GetContentRegionAvail().x;

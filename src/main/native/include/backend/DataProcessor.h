@@ -13,6 +13,7 @@
 #include <units/time.h>
 #include <units/velocity.h>
 #include <units/voltage.h>
+#include <wpi/StringMap.h>
 
 namespace units {
 using Kv_t = decltype(1_V / 1_mps);
@@ -22,7 +23,8 @@ using Ka_t = decltype(1_V / 1_mps_sq);
 namespace frcchar {
 /**
  * This class is responsible for processing raw data from the data logger to
- * produce feedforward and feedback gains.
+ * produce feedforward and feedback gains. Each instance of this class
+ * represents one JSON.
  */
 class DataProcessor {
  public:
@@ -61,13 +63,10 @@ class DataProcessor {
   };
 
   /**
-   * A struct that represents other settings for calculating feedforward and
-   * feedback gains, including the output units per rotation of the output, the
-   * maximum allowed excursion in the states and the maximum allowable control
-   * effort.
+   * A struct that represents parameters for the LQR used to calculate feedback
+   * gains.
    */
-  struct Settings {
-    units::meter_t unitsPerRotation;
+  struct LQRParameters {
     units::meter_t qp;
     units::meters_per_second_t qv;
     units::volt_t maxEffort;
@@ -78,58 +77,77 @@ class DataProcessor {
    *
    * @param preset The preset to construct this processor instance with.
    */
-  DataProcessor(const GainPreset& preset) : m_preset(preset) {}
+  DataProcessor(std::string* path, FFGains* ffGains, FBGains* fbGains,
+                GainPreset* preset, LQRParameters* params);
 
   /**
-   * Calculates the feedforward and feedback gains for the drivetrain, given a
-   * path to the stored JSON.
-   *
-   * @param path The path to the JSON containing the raw data.
-   *
-   * @return 2 sets of feedforward and feedback gains, representing the left and
-   *         right sides of the drivetrain respectively.
+   * Calculates the feedback and feedforward gains given the current state of
+   * this instance. This should be called whenever a value inside the gain
+   * preset or LQR parameters has changed.
    */
-  std::tuple<FFGains, FFGains, FBGains, FBGains> CalculateDrivetrainParameters(
-      const std::string& path);
-
-  /**
-   * Calculates the feedforward and feedback gains for a mechanism, given a path
-   * to the stored JSON.
-   *
-   * @param path The path to the JSON containing the raw data.
-   *
-   * @return A set of feedforward and feedback gains.
-   */
-  std::tuple<FFGains, FBGains> CalculateParameters(const std::string& path);
+  void Update();
 
  private:
   using RawData = std::vector<std::array<double, 10>>;
-  std::pair<std::vector<double>, std::vector<double>> PrepareDrivetrainData(
-      const std::vector<std::array<double, 10>>& data);
-  std::vector<double> PrepareData(std::vector<std::array<double, 10>>* data);
 
-  std::vector<double> ComputeAcceleration(
-      std::vector<std::array<double, 10>>* data);
-  void TrimQuasistaticData(std::vector<std::array<double, 10>>* data);
+  /**
+   * Trims quasistatic test data to eliminate data points where the velocity was
+   * below the motion threshold or when the applied voltage was zero.
+   */
+  void TrimQuasistaticData(RawData* data);
+
+  /**
+   * Calculates acceleration by taking the slope of the secant line between
+   * three data points. This data is then bundled with the other voltage and
+   * velocity data.
+   */
+  std::vector<double> PrepareDataForAnalysis(RawData* data);
+
+  /**
+   * Trims acceleration data to remove all data points before the maximum
+   * acceleration point.
+   */
   void TrimStepVoltageData(std::vector<double>* data);
 
-  FFGains CalculateFeedforwardGains(const std::vector<double>& data);
+  /**
+   * Calculates feedforward gains for the given data set.
+   */
+  void CalculateFeedforwardGains();
 
-  FBGains CalculatePositionFeedbackGains(const FFGains& ff, units::meter_t qp,
-                                         units::meters_per_second_t qv,
-                                         units::volt_t maxEffort,
-                                         units::second_t period,
-                                         units::second_t positionDelay);
-  FBGains CalculateVelocityFeedbackGains(const FFGains& ff,
-                                         units::meters_per_second_t qv,
-                                         units::volt_t maxEffort,
-                                         units::second_t period,
-                                         units::second_t sensorDelay);
+  /**
+   * Calculates position feedback gains for the given data set using the
+   * feedforward parameters.
+   */
+  void CalculatePositionFeedbackGains();
 
- private:
-  GainPreset m_preset;
-  Settings m_settings{0.58_m, 5_m, 7_mps, 12_V};
-  static constexpr units::meters_per_second_t kQuasistaticVelocityThreshold =
-      0.1_mps;
+  /**
+   * Calculates velocity feedback gains for the given data set using the
+   * feedforward parameters.
+   */
+  void CalculateVelocityFeedbackGains();
+
+  // Location of the JSON file.
+  std::string& m_path;
+
+  // Storage for feedforward and feedback gains.
+  FFGains& m_ffGains;
+  FBGains& m_fbGains;
+
+  // Other values from the JSON.
+  units::meter_t m_factor;
+  std::string m_projectType;
+
+  // Preset and LQR parameters.
+  GainPreset& m_preset;
+  LQRParameters& m_lqrParams;
+
+  // Used to store the various data sets.
+  wpi::StringMap<std::vector<double>> m_data;
+
+  // Which dataset to use
+  std::string m_dataset = "Backward";
+
+  // Motion threshold.
+  static constexpr auto kQuasistaticVelocityThreshold = 0.1_mps;
 };
 }  // namespace frcchar

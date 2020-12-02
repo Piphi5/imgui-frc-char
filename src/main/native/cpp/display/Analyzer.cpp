@@ -5,6 +5,7 @@
 #include <future>
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <wpi/raw_ostream.h>
 
 #include "backend/DataProcessor.h"
@@ -13,7 +14,7 @@
 using namespace frcchar;
 
 void Analyzer::Initialize() {
-  FRCCharacterization::AddWindow("Analyzer", [&] {
+  FRCCharacterization::Manager.AddWindow("Analyzer", [&] {
     // Get the current width of the window. This will be used to scale the UI
     // elements.
     float width = ImGui::GetContentRegionAvail().x;
@@ -43,18 +44,23 @@ void Analyzer::Initialize() {
     ImGui::Spacing();
     ImGui::Text("Feedforward Gains");
 
-    ImGui::InputDouble("Ks", &Ks, 0, 0, "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Kv", &Kv, 0, 0, "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Ka", &Ka, 0, 0, "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("R-Squared", &Rs, 0, 0, "%2.3f",
+    ImGui::InputDouble("Ks", reinterpret_cast<double*>(&(m_ffGains.Ks)), 0, 0,
+                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputDouble("Kv", reinterpret_cast<double*>(&(m_ffGains.Kv)), 0, 0,
+                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputDouble("Ka", reinterpret_cast<double*>(&(m_ffGains.Ka)), 0, 0,
+                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputDouble("R-Squared", &(m_ffGains.CoD), 0, 0, "%2.3f",
                        ImGuiInputTextFlags_ReadOnly);
 
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::Text("Feedback Gains");
 
-    ImGui::InputDouble("Kp", &Kp, 0, 0, "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Kd", &Kd, 0, 0, "%2.3f", ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputDouble("Kp", &(m_fbGains.Kp), 0, 0, "%2.3f",
+                       ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputDouble("Kd", &(m_fbGains.Kd), 0, 0, "%2.3f",
+                       ImGuiInputTextFlags_ReadOnly);
 
     // Handle exceptions from other threads.
     HandleExceptions();
@@ -83,20 +89,8 @@ void Analyzer::OpenData() {
     }
 
     m_fileOpener.reset();
-    try {
-      std::async(std::launch::async, [&] {
-        DataProcessor p{
-            DataProcessor::GainPreset{true, 20_ms, 0_s, 1 / 1_V, true}};
-        auto [ff, fb] = p.CalculateParameters(m_fileLocation);
-        Ks = ff.Ks.to<double>();
-        Kv = ff.Kv.to<double>();
-        Ka = ff.Ka.to<double>();
-        Rs = ff.CoD;
-        Kp = fb.Kp;
-        Kd = fb.Kd;
-      });
-    } catch (const std::exception& e) {
-      m_exception = std::current_exception();
-    }
+    DataProcessor p{&m_fileLocation, &m_ffGains, &m_fbGains, &m_preset,
+                    &m_params};
+    p.Update();
   }
 }
