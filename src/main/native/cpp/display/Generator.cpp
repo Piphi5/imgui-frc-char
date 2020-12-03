@@ -2,6 +2,7 @@
 
 #include "display/Generator.h"
 
+#include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -23,57 +24,31 @@ const char* Generator::kMotorControllers[] = {
     "Spark",        "Victor",        "VictorSP",    "PWMTalonSRX",
     "WPI_TalonSRX", "WPI_VictorSPX", "WPI_TalonFX", "CANSparkMax"};
 
-void Generator::SelectProjectLocation() {
-  if (m_folderSelector && m_folderSelector->ready()) {
-    m_projectLocation = m_folderSelector->result();
-    m_modifiedLocation = m_projectLocation;
-
-    const char* home = std::getenv("HOME");
-    if (home) {
-      size_t len = std::strlen(home);
-      bool trailingSlash = home[len - 1] == '/';
-      size_t index = m_modifiedLocation.find(home);
-      if (index != std::string::npos)
-        m_modifiedLocation.replace(index, len, trailingSlash ? "~/" : "~");
-    }
-    m_folderSelector.reset();
-  }
-}
-
-void Generator::GenerateProject() {
-  m_generationStatus = std::async(std::launch::async, [&] {
-    try {
-      m_creator.CreateProject();
-    } catch (const std::exception& e) {
-      m_exception = std::current_exception();
-    }
-  });
-}
-
-bool Generator::IsGenerationReady() const {
-  return m_generationStatus.wait_for(std::chrono::seconds(0)) !=
-         std::future_status::timeout;
-}
-
 void Generator::Initialize() {
+  // Initialize the team number to the storage value.
+  m_teamNumber = glass::GetStorage().GetIntRef("GeneratorTeam");
+  m_creator = std::make_unique<ProjectCreator>(m_projectLocation, m_projectName,
+                                               *m_teamNumber);
+
   // Add a new window to the GUI.
-  FRCCharacterization::Manager.AddWindow("Generator", [&] {
-    // Get the current width of the window. This will be used to scale the UI
-    // elements.
+  auto window = FRCCharacterization::Manager.AddWindow("Generator", [&] {
+    // Get the current width of the window. This will be used to scale the
+    // UI elements.
     int width = ImGui::GetContentRegionAvail().x;
 
     ImGui::Text("General");
 
     // Add team number input.
     ImGui::SetNextItemWidth(width / 5);
-    ImGui::InputInt("Team", &m_teamNumber, 0);
+    ImGui::InputInt("Team", m_teamNumber, 0);
 
     // Add project type input.
     ImGui::SetNextItemWidth(width / 2.5);
     ImGui::Combo("Project Type", &m_projectType, kProjectTypes,
                  IM_ARRAYSIZE(kProjectTypes));
 
-    // Create a function that will add help tooltips beside certain UI widgets.
+    // Create a function that will add help tooltips beside certain UI
+    // widgets.
     auto createHelperMarker = [&width](const char* desc) {
       ImGui::SameLine(width * 0.85);
       ImGui::TextDisabled("(?)");
@@ -96,7 +71,8 @@ void Generator::Initialize() {
     ImGui::Combo("Motor Controller", &m_motorController, kMotorControllers,
                  IM_ARRAYSIZE(kMotorControllers));
     createHelperMarker(
-        "This represents the physical motor controller that is connected to "
+        "This represents the physical motor controller that is connected "
+        "to "
         "the mechanism that you are trying to characterize.");
 
     // Add section for motor ports.
@@ -106,8 +82,8 @@ void Generator::Initialize() {
 
     // Create inputs for motor ports.
     for (size_t i = 0; i < m_motorPortsUsed; ++i) {
-      // Ensure vector sizes are correct. It's enough to check only one vector
-      // since we always keep their sizes the same.
+      // Ensure vector sizes are correct. It's enough to check only one
+      // vector since we always keep their sizes the same.
       if (i == m_leftMotorPorts.size()) {
         m_leftMotorPorts.emplace_back(0);
         m_rightMotorPorts.emplace_back(1);
@@ -148,13 +124,14 @@ void Generator::Initialize() {
       }
     }
 
-    // Check if we want to use the integrated sensor (for motor controllers that
-    // support this).
+    // Check if we want to use the integrated sensor (for motor controllers
+    // that support this).
     ImGui::Spacing();
     if (m_motorController > 3) {
       ImGui::Checkbox("Use Integrated Sensor", &m_useIntegratedSensor);
       createHelperMarker(
-          "Whether you want to use the sensor connected directly to the motor "
+          "Whether you want to use the sensor connected directly to the "
+          "motor "
           "controller. If unchecked, you will be asked to specify roboRIO "
           "encoder ports.");
     }
@@ -163,8 +140,10 @@ void Generator::Initialize() {
     if (m_useIntegratedSensor && m_motorController == 7) {
       ImGui::Checkbox("Use NEO Encoder", &m_useNEOSensor);
       createHelperMarker(
-          "Whether you want to use the sensor on the NEO / NEO 550 itself. If "
-          "unchecked, an external quadrature encoder connected to the Spark "
+          "Whether you want to use the sensor on the NEO / NEO 550 itself. "
+          "If "
+          "unchecked, an external quadrature encoder connected to the "
+          "Spark "
           "MAX will be used.");
     }
 
@@ -191,7 +170,8 @@ void Generator::Initialize() {
     ImGui::SetNextItemWidth(width / 5);
     ImGui::InputFloat("Encoder EPR", &m_encoderEPR, 0);
     createHelperMarker(
-        "The encoder edges per revolution. This is not the same as cycles per "
+        "The encoder edges per revolution. This is not the same as cycles "
+        "per "
         "revolution. This value should be the edges per revolution of the "
         "wheels and so should take into account the gearing between the "
         "encoder and the wheels.");
@@ -213,7 +193,8 @@ void Generator::Initialize() {
       ImGui::SetNextItemWidth(width / 2.5);
       ImGui::InputText("Gyro Port", m_gyroPort, IM_ARRAYSIZE(m_gyroPort));
       createHelperMarker(
-          "This represents what you would normally put inside the constructor "
+          "This represents what you would normally put inside the "
+          "constructor "
           "of your gyro in your robot code.");
     }
 
@@ -284,23 +265,41 @@ void Generator::Initialize() {
       if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
       ImGui::EndPopup();
     }
-
-    // Handle any exceptions that are thrown from our threads.
-    if (m_exception) {
-      auto ex = m_exception;
-      m_exception = std::exception_ptr();
-      std::rethrow_exception(ex);
-    }
   });
+
+  window->DisableRenamePopup();
+}
+
+void Generator::SelectProjectLocation() {
+  if (m_folderSelector && m_folderSelector->ready()) {
+    m_projectLocation = m_folderSelector->result();
+    m_modifiedLocation = m_projectLocation;
+
+    const char* home = std::getenv("HOME");
+    if (home) {
+      size_t len = std::strlen(home);
+      bool trailingSlash = home[len - 1] == '/';
+      size_t index = m_modifiedLocation.find(home);
+      if (index != std::string::npos)
+        m_modifiedLocation.replace(index, len, trailingSlash ? "~/" : "~");
+    }
+    m_folderSelector.reset();
+  }
+}
+
+void Generator::GenerateProject() {
+  m_generationStatus =
+      std::async(std::launch::async, [&] { m_creator->CreateProject(); });
 }
 
 void Generator::DeployProject() {
   m_deployStatus = std::async(std::launch::async, [&] {
-    try {
-      m_deployOutput = "";
-      m_creator.DeployProject(&m_deployOutput);
-    } catch (const std::exception& e) {
-      m_exception = std::current_exception();
-    }
+    m_deployOutput = "";
+    m_creator->DeployProject(&m_deployOutput);
   });
+}
+
+bool Generator::IsGenerationReady() const {
+  return m_generationStatus.wait_for(std::chrono::seconds(0)) !=
+         std::future_status::timeout;
 }

@@ -2,10 +2,11 @@
 
 #include "display/Analyzer.h"
 
-#include <future>
-
 #include <imgui.h>
 #include <imgui_stdlib.h>
+
+#include <future>
+
 #include <wpi/raw_ostream.h>
 
 #include "backend/DataProcessor.h"
@@ -14,7 +15,7 @@
 using namespace frcchar;
 
 void Analyzer::Initialize() {
-  FRCCharacterization::Manager.AddWindow("Analyzer", [&] {
+  auto window = FRCCharacterization::Manager.AddWindow("Analyzer", [&] {
     // Get the current width of the window. This will be used to scale the UI
     // elements.
     float width = ImGui::GetContentRegionAvail().x;
@@ -61,19 +62,11 @@ void Analyzer::Initialize() {
                        ImGuiInputTextFlags_ReadOnly);
     ImGui::InputDouble("Kd", &(m_fbGains.Kd), 0, 0, "%2.3f",
                        ImGuiInputTextFlags_ReadOnly);
-
-    // Handle exceptions from other threads.
-    HandleExceptions();
   });
+
+  window->DisableRenamePopup();
 }
 
-void Analyzer::HandleExceptions() {
-  if (m_exception) {
-    auto ex = m_exception;
-    m_exception = std::exception_ptr();
-    std::rethrow_exception(ex);
-  }
-}
 void Analyzer::OpenData() {
   if (m_fileOpener && m_fileOpener->ready(0)) {
     m_fileLocation = m_fileOpener->result().at(0);
@@ -88,9 +81,11 @@ void Analyzer::OpenData() {
         m_modifiedLocation.replace(index, len, trailingSlash ? "~/" : "~");
     }
 
+    m_processor.reset();
+    m_processor = std::make_unique<DataProcessor>(
+        &m_fileLocation, &m_ffGains, &m_fbGains, &m_preset, &m_params);
+    m_processor->Update();
+
     m_fileOpener.reset();
-    DataProcessor p{&m_fileLocation, &m_ffGains, &m_fbGains, &m_preset,
-                    &m_params};
-    p.Update();
   }
 }

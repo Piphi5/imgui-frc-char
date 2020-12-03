@@ -2,12 +2,17 @@
 
 #pragma once
 
-#include <glass/WindowManager.h>
 #include <glass/MainMenuBar.h>
+#include <glass/WindowManager.h>
 
-#include <functional>
+#include <memory>
 
 namespace frcchar {
+
+class Logger;
+class Analyzer;
+class Generator;
+
 class FRCCharacterization {
  public:
   /**
@@ -17,5 +22,9 @@ class FRCCharacterization {
 
   static glass::WindowManager Manager;
   static glass::MainMenuBar MenuBar;
+
+  static std::unique_ptr<Logger> Logger;
+  static std::unique_ptr<Analyzer> Analyzer;
+  static std::unique_ptr<Generator> Generator;
 };
 }  // namespace frcchar

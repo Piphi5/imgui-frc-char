@@ -2,6 +2,7 @@
 
 #include <glass/Context.h>
 #include <wpigui.h>
+
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
@@ -21,17 +22,6 @@ int main() {
 
   // Initialize FRC Characterization.
   FRCCharacterization::GlobalInit();
-
-  // Add our widgets to the application.
-  Logger logger;
-  Analyzer analyzer;
-  Generator generator;
-
-  wpi::gui::AddInit([&] {
-    logger.Initialize();
-    analyzer.Initialize();
-    generator.Initialize();
-  });
 
   // Add the list of widgets to the menu bar.
   FRCCharacterization::MenuBar.AddMainMenu([] {

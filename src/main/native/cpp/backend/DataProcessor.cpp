@@ -6,8 +6,8 @@
 #include <frc/controller/LinearQuadraticRegulator.h>
 #include <frc/system/plant/LinearSystemId.h>
 #include <wpi/json.h>
-#include <wpi/raw_ostream.h>
 #include <wpi/raw_istream.h>
+#include <wpi/raw_ostream.h>
 
 using namespace frcchar;
 

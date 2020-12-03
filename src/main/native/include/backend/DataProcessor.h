@@ -7,8 +7,8 @@
 #include <tuple>
 #include <vector>
 
-#include <units/base.h>
 #include <units/acceleration.h>
+#include <units/base.h>
 #include <units/dimensionless.h>
 #include <units/time.h>
 #include <units/velocity.h>

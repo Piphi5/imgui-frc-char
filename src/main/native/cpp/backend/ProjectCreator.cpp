@@ -53,10 +53,21 @@ void ProjectCreator::CreateProject() {
 }
 
 void ProjectCreator::DeployProject(std::string* result) {
+  std::string jdk = std::getenv("HOME");
+  jdk += ((jdk.back() == fs::path::preferred_separator ? "" : "/")) +
+         std::string("wpilib/2021/jdk");
+
   std::array<char, 128> buffer{};
+
+  std::string command;
+  if (m_team != 0) {
+    command = "./gradlew deploy -Dorg.gradle.java.home=" + jdk + " 2>&1";
+  } else {
+    command = "./gradlew simulateJava -Dorg.gradle.java.home=" + jdk + " 2>&1";
+  }
+
   auto pipe = popen(
-      std::string("cd " + GetProjectPath().string() + ";./gradlew deploy 2>&1")
-          .c_str(),
+      std::string("cd " + GetProjectPath().string() + ";" + command).c_str(),
       "r");
   if (!pipe) throw std::runtime_error("The command failed to execute.");
 
@@ -68,6 +79,7 @@ void ProjectCreator::DeployProject(std::string* result) {
 
   pclose(pipe);
 }
+
 fs::path ProjectCreator::GetProjectPath() const {
   return m_dir + (m_dir.back() == fs::path::preferred_separator
                       ? m_name

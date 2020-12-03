@@ -2,8 +2,10 @@
 
 #include "display/Logger.h"
 
+#include <glass/Context.h>
 #include <imgui.h>
 #include <networktables/NetworkTableInstance.h>
+#include <wpigui.h>
 
 #include <array>
 #include <chrono>
@@ -18,47 +20,43 @@
 using namespace frcchar;
 
 void Logger::Initialize() {
+  // Add an NT connection listener used to update the NetworkTables state.
+  auto inst = nt::GetDefaultInstance();
+  auto poller = nt::CreateConnectionListenerPoller(inst);
+  nt::AddPolledConnectionListener(poller, true);
+  wpi::gui::AddEarlyExecute([&] {
+    bool timedOut;
+    for (auto&& event : nt::PollConnectionListener(poller, 0, &timedOut))
+      m_ntConnectionStatus = event.connected;
+  });
+
+  m_teamNumber = glass::GetStorage().GetIntRef("LoggerTeam");
+
   // Add a new window to the GUI.
-  FRCCharacterization::Manager.AddWindow("Logger", [&] {
-    // Get the current width of the window. This will be used to scale our UI
-    // elements.
+  glass::Window* window = FRCCharacterization::Manager.AddWindow("Logger", [&] {
+    // Get the current width of the window. This will be used to scale
+    // our UI elements.
     float width = ImGui::GetContentRegionAvail().x;
 
     // Display information about the test type.
     ImGui::Text("%s", ("Project Type: " + m_projectType).c_str());
 
-    // Add NT connection buttons and team number input.
-    // If the future is not valid or there is no need to reset, then it means we
-    // need to show a button to establish a connection.
-    if (!m_ntConnectionStatus.valid() && !m_ntNeedsReset) {
-      if (ImGui::Button("Connect")) AttemptNTConnection();
-    } else if (!m_ntNeedsReset && !IsNTConnectionStatusReady()) {
-      // If the future is still calculating, then we need to display the
-      // "Connecting..." text.
-      ImGui::Button("Connecting...");
-    } else if (m_ntConnectionStatus.valid()) {
-      // Now that we have a state, we can show the reset button.
+    ImGui::SetNextItemWidth(width / 5);
+    ImGui::InputInt("Team Number", m_teamNumber, 0);
+
+    if (ImGui::Button("Apply")) {
       m_ntNeedsReset = true;
-
-      // Set the last NT connection to whatever the state was.
-      m_lastNTConnection = m_ntConnectionStatus.get();
-    }
-
-    // If we need to show the reset button, it means that we either have a
-    // failure or success state. We need to display this.
-    if (m_ntNeedsReset) {
-      ImGui::Button(m_lastNTConnection ? "Connected" : "Connection Failed");
-      ImGui::SameLine();
-      if (ImGui::Button("Reset")) {
-        // Reset the statuses.
-        m_ntNeedsReset = false;
-        m_lastNTConnection = false;
-      }
     }
 
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(width / 5);
-    ImGui::InputInt("Team Number", &m_teamNumber, 0);
+    ImGui::Text(m_ntConnectionStatus ? "NT Connected" : "NT Disconnected");
+
+    if (m_ntNeedsReset) {
+      m_ntNeedsReset = false;
+      nt::StopClient(nt::GetDefaultInstance());
+      nt::StartClientTeam(nt::GetDefaultInstance(), *m_teamNumber,
+                          NT_DEFAULT_PORT);
+    }
 
     // Create new section for voltage parameters.
     ImGui::Separator();
@@ -86,7 +84,7 @@ void Logger::Initialize() {
     // Add buttons and text for the tests.
     auto createTestButtons = [&](const char* name, bool run) {
       // Display buttons if we have an NT connection.
-      if (m_lastNTConnection) {
+      if (m_ntConnectionStatus) {
         // Create button to run test.
         if (ImGui::Button(name)) {
           // Open the warning message.
@@ -99,9 +97,12 @@ void Logger::Initialize() {
         if (m_openedPopup == name && ImGui::BeginPopupModal("Warning")) {
           // Show warning text.
           ImGui::Text(
-              "Please enable the robot in autonomous mode, and then disable it "
-              "before it runs out of space. \n Note: The robot will continue "
-              "to move until you disable it - It is your responsibility to "
+              "Please enable the robot in autonomous mode, and then "
+              "disable it "
+              "before it runs out of space. \n Note: The robot will "
+              "continue "
+              "to move until you disable it - It is your "
+              "responsibility to "
               "ensure it does not hit anything!");
           // Add "Close" button
           if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
@@ -147,60 +148,15 @@ void Logger::Initialize() {
 
     ImGui::SameLine();
     if (ImGui::Button("Save")) CreateDataFile();
-
-    if (m_exception) {
-      auto ex = m_exception;
-      m_exception = std::exception_ptr();
-      std::rethrow_exception(ex);
-    }
   });
+
+  window->DisableRenamePopup();
 }
 
 void Logger::UpdateProjectType(const std::string& type) {
   m_projectType = type;
 }
 
-void Logger::AttemptNTConnection() {
-  m_ntConnectionStatus = std::async(std::launch::async, [&] {
-    using std::chrono::system_clock;
-    using std::chrono::seconds;
-
-    bool connected = false;
-
-    try {
-      // Get the current time.
-      auto startTime = system_clock::now();
-
-      // Attempt connection.
-      if (m_teamNumber == 0)
-        nt::NetworkTableInstance::GetDefault().StartClient("localhost");
-      else
-        nt::NetworkTableInstance::GetDefault().StartClientTeam(m_teamNumber);
-
-      // Wait for connection success or 3 seconds of connection failure.
-      while (!(connected || system_clock::now() - startTime > seconds(3)))
-        // Check whether a connection has been established.
-        connected = nt::NetworkTableInstance::GetDefault().IsConnected();
-
-      // If there was no connection established, we can stop attempting to
-      // connect.
-      if (!connected) {
-        nt::NetworkTableInstance::GetDefault().StopClient();
-        throw std::runtime_error("Connection was not established!");
-      }
-    } catch (const std::exception& e) {
-      m_exception = std::current_exception();
-    }
-
-    // Return the connection status.
-    return connected;
-  });
-}
-
-bool Logger::IsNTConnectionStatusReady() const {
-  return m_ntConnectionStatus.wait_for(std::chrono::seconds(0)) !=
-         std::future_status::timeout;
-}
 void Logger::SelectDataFolder() {
   if (m_folderSelector && m_folderSelector->ready()) {
     m_fileLocation = m_folderSelector->result();
@@ -218,12 +174,5 @@ void Logger::SelectDataFolder() {
     m_folderSelector.reset();
   }
 }
-void Logger::CreateDataFile() {
-  m_fileCreationStatus = std::async(std::launch::async, [&] {
-    try {
-      throw std::runtime_error("This is not implemented yet.");
-    } catch (const std::exception& e) {
-      m_exception = std::current_exception();
-    }
-  });
-}
+
+void Logger::CreateDataFile() {}

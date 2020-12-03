@@ -4,12 +4,16 @@
 
 #include <portable-file-dialogs.h>
 
-#include <exception>
 #include <future>
 #include <memory>
 #include <string>
 
 namespace frcchar {
+/**
+ * The logger GUI takes care of running the characterization tests over
+ * NetworkTables and logging the data. This data is then stored in a JSON file
+ * which can be used for analysis.
+ */
 class Logger {
  public:
   /**
@@ -25,36 +29,28 @@ class Logger {
 
  private:
   /**
-   * Attempt an NT connection and store it in a future.
+   * Selects the folder where the JSON file will be saved.
    */
-  void AttemptNTConnection();
-
-  /**
-   * Returns whether the NT connection status future is ready with a shared
-   * state.
-   */
-  bool IsNTConnectionStatusReady() const;
-
   void SelectDataFolder();
 
+  /**
+   * Creates the data file from the logged data.
+   */
   void CreateDataFile();
 
  private:
   // NT Connection State
-  std::future<bool> m_ntConnectionStatus;
-  bool m_ntNeedsReset = false;
-  bool m_lastNTConnection = false;
-  std::exception_ptr m_exception;
+  bool m_ntNeedsReset = true;
+  bool m_ntConnectionStatus = false;
 
   // Project Settings
   std::string m_projectType = "Drivetrain";
-  int m_teamNumber = 0;
+  int* m_teamNumber = nullptr;
   std::unique_ptr<pfd::select_folder> m_folderSelector;
 
+  // Folder locations for the JSON files.
   std::string m_fileLocation;
   std::string m_modifiedLocation;
-
-  std::future<void> m_fileCreationStatus;
 
   // Voltage Settings
   float m_quasistaticRampVoltage = 0.25f;

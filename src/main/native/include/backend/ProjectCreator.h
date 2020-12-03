@@ -20,16 +20,16 @@ namespace fs = std::filesystem;
 namespace frcchar {
 class ProjectCreator {
  public:
-  ProjectCreator(const std::string &dir, const std::string &name,
-                 const int &team);
+  ProjectCreator(const std::string& dir, const std::string& name,
+                 const int& team);
 
   void CreateProject();
-  void DeployProject(std::string *result);
+  void DeployProject(std::string* result);
 
  private:
-  const std::string &m_dir;
-  const std::string &m_name;
-  const int &m_team;
+  const std::string& m_dir;
+  const std::string& m_name;
+  const int& m_team;
 
   LLVM_NODISCARD fs::path GetProjectPath() const;
 };
