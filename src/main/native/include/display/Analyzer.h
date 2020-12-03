@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <portable-file-dialogs.h>
-
 #include <memory>
 #include <string>
+
+#include <portable-file-dialogs.h>
 
 #include "backend/DataProcessor.h"
 

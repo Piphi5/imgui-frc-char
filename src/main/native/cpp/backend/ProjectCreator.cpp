@@ -35,7 +35,7 @@ void ProjectCreator::CreateProject() {
   wpi::raw_fd_ostream gradle(p.string() + "/build.gradle", ec);
   gradle <<
 #include "generated/BuildGradle.h"
-      ;
+      ;  // NOLINT(whitespace/semicolon)
   gradle.close();
 
   // Create the .wpilib/wpilib_preferences.json

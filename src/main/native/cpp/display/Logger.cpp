@@ -2,18 +2,17 @@
 
 #include "display/Logger.h"
 
-#include <glass/Context.h>
-#include <imgui.h>
-#include <networktables/NetworkTableInstance.h>
-#include <wpigui.h>
-
 #include <array>
 #include <chrono>
 #include <future>
 #include <iostream>
 #include <thread>
 
+#include <glass/Context.h>
+#include <imgui.h>
+#include <networktables/NetworkTableInstance.h>
 #include <wpi/raw_ostream.h>
+#include <wpigui.h>
 
 #include "display/FRCCharacterization.h"
 

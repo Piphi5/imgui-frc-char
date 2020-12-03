@@ -1,11 +1,10 @@
 // MIT License
 
 #include <glass/Context.h>
-#include <wpigui.h>
-
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
+#include <wpigui.h>
 
 #include "backend/DataProcessor.h"
 #include "display/Analyzer.h"

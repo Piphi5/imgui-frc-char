@@ -9,12 +9,13 @@ cppSrcFileInclude {
   \.cpp$
 }
 
-includeProject {
-  ^photonLib/
-}
-
 includeOtherLibs {
   ^frc/
+  ^glass/
+  ^networktables/
   ^units/
   ^wpi/
+  ^imgui
+  ^portable-file-dialogs\.h$
+  ^wpigui\.h$
 }

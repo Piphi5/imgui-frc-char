@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <memory>
+
 #include <glass/MainMenuBar.h>
 #include <glass/WindowManager.h>
-
-#include <memory>
 
 namespace frcchar {
 

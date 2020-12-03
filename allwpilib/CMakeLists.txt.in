@@ -5,7 +5,7 @@ project(allwpilib-download NONE)
 include(ExternalProject)
 ExternalProject_Add(allwpilib
   GIT_REPOSITORY    https://github.com/PeterJohnson/allwpilib
-  GIT_TAG           4234f37eb9bfd547e20291c79bd4717672627800
+  GIT_TAG           6d33f6f660a9fc6666d2687b5755d003c11f0d00
   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/allwpilib-src"
   BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/allwpilib-build"
   CONFIGURE_COMMAND ""

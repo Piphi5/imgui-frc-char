@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <portable-file-dialogs.h>
-
 #include <future>
 #include <memory>
 #include <string>
 
+#include <portable-file-dialogs.h>
 #include <wpi/Error.h>
 #include <wpi/SmallVector.h>
 

@@ -2,13 +2,12 @@
 
 #include "display/Generator.h"
 
+#include <cstdlib>
+
 #include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-
-#include <cstdlib>
-
 #include <wpi/raw_ostream.h>
 
 #include "backend/ProjectCreator.h"

@@ -2,11 +2,10 @@
 
 #include "display/Analyzer.h"
 
-#include <imgui.h>
-#include <imgui_stdlib.h>
-
 #include <future>
 
+#include <imgui.h>
+#include <imgui_stdlib.h>
 #include <wpi/raw_ostream.h>
 
 #include "backend/DataProcessor.h"
