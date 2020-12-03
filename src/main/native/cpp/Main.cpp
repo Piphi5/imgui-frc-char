@@ -23,6 +23,10 @@ int main() {
   // Initialize FRC Characterization.
   FRCCharacterization::GlobalInit();
 
+  // Create a unique INI.
+  wpi::gui::AddInit(
+      [] { ImGui::GetIO().IniFilename = "frc-characterization.ini"; });
+
   // Add the list of widgets to the menu bar.
   FRCCharacterization::MenuBar.AddMainMenu([] {
     if (ImGui::BeginMenu("Widgets")) {

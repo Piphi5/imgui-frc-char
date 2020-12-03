@@ -5,3 +5,4 @@ xcode/
 .idea/
 buildcmake/
 cmake-build-debug/
+*.ini
