@@ -23,8 +23,8 @@ class FRCCharacterization {
   static glass::WindowManager Manager;
   static glass::MainMenuBar MenuBar;
 
-  static std::unique_ptr<Logger> Logger;
-  static std::unique_ptr<Analyzer> Analyzer;
-  static std::unique_ptr<Generator> Generator;
+  static std::unique_ptr<Logger> LoggerGUI;
+  static std::unique_ptr<Analyzer> AnalyzerGUI;
+  static std::unique_ptr<Generator> GeneratorGUI;
 };
 }  // namespace frcchar
