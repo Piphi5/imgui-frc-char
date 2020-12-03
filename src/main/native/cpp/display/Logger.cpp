@@ -24,11 +24,12 @@ void Logger::Initialize() {
   auto inst = nt::GetDefaultInstance();
   auto poller = nt::CreateConnectionListenerPoller(inst);
   nt::AddPolledConnectionListener(poller, true);
-  wpi::gui::AddEarlyExecute([&] {
-    bool timedOut;
-    for (auto&& event : nt::PollConnectionListener(poller, 0, &timedOut))
-      m_ntConnectionStatus = event.connected;
-  });
+  wpi::gui::AddEarlyExecute(
+      [poller, &m_ntConnectionStatus = m_ntConnectionStatus] {
+        bool timedOut;
+        for (auto&& event : nt::PollConnectionListener(poller, 0, &timedOut))
+          m_ntConnectionStatus = event.connected;
+      });
 
   m_teamNumber = glass::GetStorage().GetIntRef("LoggerTeam");
 
@@ -54,8 +55,12 @@ void Logger::Initialize() {
     if (m_ntNeedsReset) {
       m_ntNeedsReset = false;
       nt::StopClient(nt::GetDefaultInstance());
-      nt::StartClientTeam(nt::GetDefaultInstance(), *m_teamNumber,
-                          NT_DEFAULT_PORT);
+      if (*m_teamNumber == 0) {
+        nt::StartClient(nt::GetDefaultInstance(), "localhost", NT_DEFAULT_PORT);
+      } else {
+        nt::StartClientTeam(nt::GetDefaultInstance(), *m_teamNumber,
+                            NT_DEFAULT_PORT);
+      }
     }
 
     // Create new section for voltage parameters.
