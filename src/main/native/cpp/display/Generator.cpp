@@ -268,6 +268,8 @@ void Generator::Initialize() {
   });
 
   window->DisableRenamePopup();
+  window->SetDefaultPos(15, 27);
+  window->SetDefaultSize(506, 497);
 }
 
 void Generator::SelectProjectLocation() {

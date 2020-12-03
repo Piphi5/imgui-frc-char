@@ -65,6 +65,8 @@ void Analyzer::Initialize() {
   });
 
   window->DisableRenamePopup();
+  window->SetDefaultPos(912, 27);
+  window->SetDefaultSize(342, 497);
 }
 
 void Analyzer::OpenData() {

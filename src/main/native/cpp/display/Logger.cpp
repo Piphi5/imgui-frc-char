@@ -151,6 +151,8 @@ void Logger::Initialize() {
   });
 
   window->DisableRenamePopup();
+  window->SetDefaultPos(541, 27);
+  window->SetDefaultSize(355, 497);
 }
 
 void Logger::UpdateProjectType(const std::string& type) {

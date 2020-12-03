@@ -10,16 +10,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
+
       - name: Configure and Build
         run: mkdir build && cd build && cmake .. && make -j3
-  
+
   build-macos:
     name: Build - macOS
     runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
+
       - name: Configure and Build
         run: mkdir build && cd build && cmake .. && make -j3
