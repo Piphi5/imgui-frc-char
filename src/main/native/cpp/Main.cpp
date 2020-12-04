@@ -14,7 +14,12 @@
 
 using namespace frcchar;
 
+#ifdef _WIN32
+int __stdcall WinMain(void* hInstance, void* hPrevInstance, char* pCmdLine,
+                      int nCmdShow) {
+#else
 int main() {
+#endif
   // Create the Dear ImGui context and the Glass context.
   wpi::gui::CreateContext();
   glass::CreateContext();
