@@ -74,6 +74,11 @@ class DataProcessor {
   };
 
   /**
+   * An enum that contains all of the supported tests.
+   */
+  enum Test { kDrivetrain, kElevator, kArm, kSimple };
+
+  /**
    * Constructs a new DataProcessor instance with the given gain preset.
    *
    * @param preset The preset to construct this processor instance with.
