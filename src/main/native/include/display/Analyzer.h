@@ -32,6 +32,8 @@ class Analyzer {
   std::string m_fileLocation;
   std::string m_modifiedLocation;
 
+  int m_dataType = 2;
+
   std::unique_ptr<DataProcessor> m_processor;
 
   DataProcessor::FFGains m_ffGains{0_V, 0_V / 1_mps, 0_V / 1_mps_sq, 0.0};

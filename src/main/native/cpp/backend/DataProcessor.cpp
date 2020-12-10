@@ -2,23 +2,25 @@
 
 #include "backend/DataProcessor.h"
 
-#include <Eigen/Core>
 #include <frc/controller/LinearQuadraticRegulator.h>
 #include <frc/system/plant/LinearSystemId.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
 
+#include "backend/OLS.h"
+
 using namespace frcchar;
 
 DataProcessor::DataProcessor(std::string* path, FFGains* ffGains,
                              FBGains* fbGains, GainPreset* preset,
-                             LQRParameters* params)
+                             LQRParameters* params, int* dataType)
     : m_path(*path),
       m_ffGains(*ffGains),
       m_fbGains(*fbGains),
       m_preset(*preset),
-      m_lqrParams(*params) {
+      m_lqrParams(*params),
+      m_dataset(*dataType) {
   // Parse the JSON and extract all the relevant data from it.
   std::error_code ec;
   wpi::raw_fd_istream input(m_path, ec);
@@ -73,6 +75,9 @@ DataProcessor::DataProcessor(std::string* path, FFGains* ffGains,
   bwdEntry = std::move(sbp);
   bwdEntry.insert(bwdEntry.end(), std::make_move_iterator(fbp.begin()),
                   std::make_move_iterator(fbp.end()));
+  auto& cmbEntry = m_data["Combined"];
+  cmbEntry.insert(cmbEntry.end(), fwdEntry.begin(), fwdEntry.end());
+  cmbEntry.insert(cmbEntry.end(), bwdEntry.begin(), bwdEntry.end());
 }
 
 void DataProcessor::Update() {
@@ -177,41 +182,11 @@ void DataProcessor::TrimStepVoltageData(std::vector<double>* data) {
 }
 
 void DataProcessor::CalculateFeedforwardGains() {
-  const std::vector<double>& vec = m_data[m_dataset];
-  // The linear model can be written as follows:
-  // y = Xβ + u, where y is the dependent observed variable, X is the matrix
-  // of independent variables, β is a vector of coefficients, and u is a
-  // vector of residuals.
+  const std::vector<double>& vec = m_data[kDataSources[m_dataset]];
+  std::vector<double> results = frcchar::OLS(vec, 3);
 
-  // We want to minimize u^2 = u'u = (y - Xβ)'(y - Xβ).
-  // β = (X'X)^-1 (X'y)
-
-  // Get the number of elements.
-  int n = vec.size() / 4;
-
-  Eigen::Map<const Eigen::MatrixXd, 0, Eigen::Stride<1, 4>> y(vec.data(), n, 1);
-  Eigen::Map<const Eigen::MatrixXd, 0, Eigen::Stride<1, 4>> X(vec.data() + 1, n,
-                                                              3);
-
-  // Calculate b = β that minimizes u'u.
-  Eigen::MatrixXd b = (X.transpose() * X).llt().solve(X.transpose() * y);
-
-  // We will now calculate r^2 or the coefficient of determination, which
-  // tells us how much of the total variation (variation in y) can be
-  // explained by the regression model.
-
-  // We will first calculate the sum of the squares of the error, or the
-  // variation in error (SSE).
-  double SSE = (y - X * b).squaredNorm();
-
-  // Now we will calculate the total variation in y, known as SSTO.
-  double SSTO = ((y.transpose() * y) - (1 / n) * (y.transpose() * y)).value();
-
-  double rSquared = (SSTO - SSE) / SSTO;
-  double adjRSquared = 1 - (1 - rSquared) * ((n - 1.0) / (n - 3));
-
-  m_ffGains = {units::volt_t(b(0)), units::Kv_t(b(1)), units::Ka_t(b(2)),
-               adjRSquared};
+  m_ffGains = {units::volt_t(results[0]), units::Kv_t(results[1]),
+               units::Ka_t(results[2]), results[3]};
 }
 
 void DataProcessor::CalculatePositionFeedbackGains() {

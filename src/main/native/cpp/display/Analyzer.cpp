@@ -2,6 +2,8 @@
 
 #include "display/Analyzer.h"
 
+#include <implot.h>
+
 #include <future>
 
 #include <imgui.h>
@@ -43,24 +45,59 @@ void Analyzer::Initialize() {
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::Text("Feedforward Gains");
+    ImGui::SameLine(width / 2);
+    ImGui::SetNextItemWidth(width / 3);
+    if (ImGui::Combo("##datatype", &m_dataType, DataProcessor::kDataSources,
+                     IM_ARRAYSIZE(DataProcessor::kDataSources)) &&
+        m_processor)
+      m_processor->Update();
 
-    ImGui::InputDouble("Ks", reinterpret_cast<double*>(&(m_ffGains.Ks)), 0, 0,
-                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Kv", reinterpret_cast<double*>(&(m_ffGains.Kv)), 0, 0,
-                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Ka", reinterpret_cast<double*>(&(m_ffGains.Ka)), 0, 0,
-                       "%2.3f", ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("R-Squared", &(m_ffGains.CoD), 0, 0, "%2.3f",
-                       ImGuiInputTextFlags_ReadOnly);
+    auto showGain = [&](double* source, const char* name) {
+      ImGui::SetNextItemWidth(width / 8);
+      ImGui::InputDouble(name, source, 0, 0, "%2.3f",
+                         ImGuiInputTextFlags_ReadOnly);
+    };
+
+    // Display feedforward gains and r-squared for fit.
+    showGain(reinterpret_cast<double*>(&m_ffGains.Ks), "Ks");
+    showGain(reinterpret_cast<double*>(&m_ffGains.Kv), "Kv");
+    ImGui::SameLine(width / 2);
+    if (ImGui::Button("Voltage-Domain Plots")) {
+      ImPlot::FitNextPlotAxes();
+      ImGui::OpenPopup("Voltage-Domain Plots");
+    }
+
+    if (ImGui::BeginPopupModal("Voltage-Domain Plots")) {
+      if (ImPlot::BeginPlot("Voltage-Domain Plots")) {
+        auto& data = m_processor->GetData();
+        std::vector<ImPlotPoint> points;
+        for (size_t i = 0; i < data.size(); i += 4) {
+          points.emplace_back(data[i] - m_ffGains.Ks.to<double>() -
+                                  m_ffGains.Ka.to<double>() * data[i + 3],
+                              data[i + 2]);
+        }
+
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1,
+                                   ImVec4(0, 1, 0, 0.5f), IMPLOT_AUTO);
+        ImPlot::PlotScatter("Velocity-Portion Voltage", points.data(),
+                            points.size());
+        ImPlot::EndPlot();
+      }
+
+      if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+      ImGui::EndPopup();
+    }
+
+    showGain(reinterpret_cast<double*>(&m_ffGains.Ka), "Ka");
+    showGain(&m_ffGains.CoD, "R-Squared");
 
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::Text("Feedback Gains");
 
-    ImGui::InputDouble("Kp", &(m_fbGains.Kp), 0, 0, "%2.3f",
-                       ImGuiInputTextFlags_ReadOnly);
-    ImGui::InputDouble("Kd", &(m_fbGains.Kd), 0, 0, "%2.3f",
-                       ImGuiInputTextFlags_ReadOnly);
+    // Display feedback gains.
+    showGain(&m_fbGains.Kp, "Kp");
+    showGain(&m_fbGains.Kd, "Kd");
   });
 
   window->DisableRenamePopup();
@@ -83,8 +120,9 @@ void Analyzer::OpenData() {
     }
 
     m_processor.reset();
-    m_processor = std::make_unique<DataProcessor>(
-        &m_fileLocation, &m_ffGains, &m_fbGains, &m_preset, &m_params);
+    m_processor =
+        std::make_unique<DataProcessor>(&m_fileLocation, &m_ffGains, &m_fbGains,
+                                        &m_preset, &m_params, &m_dataType);
     m_processor->Update();
 
     m_fileOpener.reset();

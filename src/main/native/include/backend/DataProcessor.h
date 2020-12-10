@@ -15,6 +15,7 @@
 #include <units/velocity.h>
 #include <units/voltage.h>
 #include <wpi/StringMap.h>
+#include <wpi/StringRef.h>
 
 namespace units {
 using Kv_t = decltype(1_V / 1_mps);
@@ -78,13 +79,21 @@ class DataProcessor {
    */
   enum Test { kDrivetrain, kElevator, kArm, kSimple };
 
+  static constexpr const char* kDataSources[] = {"Forward", "Backward",
+                                                 "Combined"};
+  static constexpr const char* kDrivetrainDataSources[] = {
+      "Left Combined", "Right Combined", "All Combined", "Forward Combined",
+      "Backward Combined"};
+
   /**
    * Constructs a new DataProcessor instance with the given gain preset.
    *
    * @param preset The preset to construct this processor instance with.
    */
   DataProcessor(std::string* path, FFGains* ffGains, FBGains* fbGains,
-                GainPreset* preset, LQRParameters* params);
+                GainPreset* preset, LQRParameters* params, int* dataType);
+
+  std::vector<double>& GetData() { return m_data[kDataSources[m_dataset]]; }
 
   /**
    * Calculates the feedback and feedforward gains given the current state of
@@ -151,7 +160,7 @@ class DataProcessor {
   wpi::StringMap<std::vector<double>> m_data;
 
   // Which dataset to use
-  std::string m_dataset = "Backward";
+  int& m_dataset;
 
   // Motion threshold.
   static constexpr auto kQuasistaticVelocityThreshold = 0.1_mps;
